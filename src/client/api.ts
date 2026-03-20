@@ -332,3 +332,74 @@ export interface GeneratedDoc {
 export async function generateSwarmDocs(swarmId: string): Promise<GeneratedDoc> {
   return fetchJson(`/docs/${swarmId}`);
 }
+
+// Auth
+export interface AuthToken {
+  token: string;
+  user: { id: string; email: string; name: string; role: string };
+  expiresAt: string;
+}
+
+export async function loginApi(email: string, password: string): Promise<AuthToken> {
+  return postJson('/auth/login', { email, password });
+}
+
+export async function getMe(): Promise<{ user: AuthToken['user']; permissions: string[] }> {
+  return fetchJson('/auth/me');
+}
+
+// Auth token management
+let authToken: string | null = null;
+
+export function setAuthToken(token: string | null): void {
+  authToken = token;
+  if (token) {
+    localStorage.setItem('agentModusMap_token', token);
+  } else {
+    localStorage.removeItem('agentModusMap_token');
+  }
+}
+
+export function getAuthToken(): string | null {
+  if (!authToken) {
+    authToken = localStorage.getItem('agentModusMap_token');
+  }
+  return authToken;
+}
+
+// MCP Runtime
+export interface McpToolResult {
+  success: boolean;
+  output: unknown;
+  error?: string;
+  durationMs: number;
+}
+
+export async function startMcpServerApi(name: string, url: string, transport: string): Promise<{ status: string }> {
+  return postJson('/mcp/servers/start', { name, url, transport });
+}
+
+export async function stopMcpServerApi(name: string): Promise<{ status: string }> {
+  return postJson('/mcp/servers/stop', { name });
+}
+
+export async function getRunningMcpServers(): Promise<string[]> {
+  return fetchJson('/mcp/servers');
+}
+
+export async function listMcpToolsApi(serverName: string): Promise<Array<{ name: string; description: string }>> {
+  return fetchJson(`/mcp/servers/${serverName}/tools`);
+}
+
+export async function callMcpToolApi(serverName: string, toolName: string, args: Record<string, unknown>): Promise<McpToolResult> {
+  return postJson('/mcp/tools/call', { serverName, toolName, arguments: args });
+}
+
+export async function executeApiCallApi(config: { name: string; method: string; url: string; headers: Record<string, string>; authType: string; authToken?: string }, body?: unknown): Promise<{ success: boolean; status: number; data: unknown; error?: string; durationMs: number }> {
+  return postJson('/mcp/api/call', { config, body });
+}
+
+// Health check with LLM status
+export async function getApiHealth(): Promise<{ status: string; llmAvailable: boolean }> {
+  return fetchJson('/health');
+}

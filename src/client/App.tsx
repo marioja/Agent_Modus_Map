@@ -16,13 +16,16 @@ import { OptimizationPanel } from './components/OptimizationPanel.js';
 import { DocViewer } from './components/DocViewer.js';
 import { OnboardingOverlay } from './components/OnboardingOverlay.js';
 import { KeyboardShortcutsHelp } from './components/KeyboardShortcutsHelp.js';
+import { LoginPanel } from './components/LoginPanel.js';
+import { CollaborationCursors } from './components/CollaborationCursors.js';
+import { useCollaboration } from './hooks/useCollaboration.js';
 import {
   getSwarm, getBlastRadius, exportSwarm, importSwarm,
-  getSwarmHealthSummary,
+  getSwarmHealthSummary, getAuthToken, setAuthToken,
   createAgent, updateAgent, deleteAgent,
   createRelationship, deleteRelationship,
 } from './api.js';
-import type { SwarmHealthSummary } from './api.js';
+import type { SwarmHealthSummary, AuthToken } from './api.js';
 import type { Swarm, Agent, BlastRadiusResult, RelationshipType, Badge } from '../shared/types/index.js';
 
 const DEFAULT_SWARM_ID = 'ecommerce-standard-v1';
@@ -50,6 +53,9 @@ export function App() {
   const [docsOpen, setDocsOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(() => !localStorage.getItem(ONBOARDING_KEY));
+  const [showLogin, setShowLogin] = useState(false);
+  const [currentUser, setCurrentUser] = useState<AuthToken['user'] | null>(null);
+  const collab = useCollaboration(swarmId);
 
   const reloadSwarm = useCallback(async (id?: string) => {
     const targetId = id || swarmId;
@@ -104,6 +110,16 @@ export function App() {
   const dismissOnboarding = useCallback(() => {
     localStorage.setItem(ONBOARDING_KEY, 'true');
     setShowOnboarding(false);
+  }, []);
+
+  const handleLogin = useCallback((auth: AuthToken) => {
+    setCurrentUser(auth.user);
+    setShowLogin(false);
+  }, []);
+
+  const handleLogout = useCallback(() => {
+    setAuthToken(null);
+    setCurrentUser(null);
   }, []);
 
   const handleSelectAgent = useCallback(async (agent: Agent | null) => {
@@ -279,6 +295,12 @@ export function App() {
           healthStatus={healthSummary?.overall}
         />
         <div style={{ flex: 1, position: 'relative' }}>
+          <CollaborationCursors
+            cursors={collab.cursors}
+            users={collab.users}
+            connected={collab.connected}
+          />
+
           <AgentPalette
             layers={swarm.layers}
             onDragStart={() => {}}
@@ -382,6 +404,7 @@ export function App() {
       />
 
       {showOnboarding && <OnboardingOverlay onDismiss={dismissOnboarding} />}
+      {showLogin && <LoginPanel onLogin={handleLogin} onSkip={() => setShowLogin(false)} />}
     </ReactFlowProvider>
   );
 }

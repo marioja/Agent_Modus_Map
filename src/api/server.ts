@@ -10,11 +10,16 @@ import { createGovernanceRoutes } from './routes/governance-routes.js';
 import { createCollaborationRoutes } from './routes/collaboration-routes.js';
 import { createOptimizationRoutes } from './routes/optimization-routes.js';
 import { createDocGenerationRoutes } from './routes/doc-generation-routes.js';
+import { createAuthRoutes } from './routes/auth-routes.js';
+import { createMcpRoutes } from './routes/mcp-routes.js';
 import { initKnowledgeBase, seedKnowledgeBase } from './db/knowledge-base.js';
 import { initHealthStore } from './db/health-store.js';
 import { initDecisionTraceStore } from './db/decision-trace-store.js';
 import { initAuditStore } from './db/audit-store.js';
 import { initVersionStore } from './db/version-store.js';
+import { initAuthStore } from './services/auth-service.js';
+import { CollaborationServer } from './services/websocket-service.js';
+import { isLLMAvailable } from './services/llm-service.js';
 
 export function createApp(db?: ReturnType<typeof getDb>) {
   const app = express();
@@ -25,6 +30,7 @@ export function createApp(db?: ReturnType<typeof getDb>) {
   initDecisionTraceStore(database);
   initAuditStore(database);
   initVersionStore(database);
+  initAuthStore(database);
 
   app.use(cors());
   app.use(express.json({ limit: '10mb' }));
@@ -38,10 +44,12 @@ export function createApp(db?: ReturnType<typeof getDb>) {
   app.use('/api/collaboration', createCollaborationRoutes(database));
   app.use('/api/optimization', createOptimizationRoutes(database));
   app.use('/api/docs', createDocGenerationRoutes(database));
+  app.use('/api/auth', createAuthRoutes(database));
+  app.use('/api/mcp', createMcpRoutes());
 
   // Health check
   app.get('/api/health', (_req, res) => {
-    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+    res.json({ status: 'ok', timestamp: new Date().toISOString(), llmAvailable: isLLMAvailable() });
   });
 
   return app;
@@ -68,7 +76,17 @@ if (isMain) {
 
   const app = createApp(database);
   const port = process.env.PORT || 3001;
-  app.listen(port, () => {
+  const server = app.listen(port, () => {
     console.log(`Agent Modus Map API running on port ${port}`);
+    if (isLLMAvailable()) {
+      console.log('LLM integration: enabled (Claude API)');
+    } else {
+      console.log('LLM integration: disabled (set ANTHROPIC_API_KEY to enable)');
+    }
   });
+
+  // Attach WebSocket for real-time collaboration
+  const wsServer = new CollaborationServer();
+  wsServer.attach(server);
+  console.log('WebSocket collaboration server attached at /ws');
 }

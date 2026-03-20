@@ -1,10 +1,13 @@
 // RAG service implementing ADR-003 (Dual RAG Architecture)
 // Graph RAG: translates natural language to graph service queries
 // Documentation RAG: full-text search over curated knowledge base
+// LLM-enhanced: uses Claude API when ANTHROPIC_API_KEY is set
 
 import type Database from 'better-sqlite3';
 import { GraphService } from './graph-service.js';
+import { SwarmService } from './swarm-service.js';
 import { searchKnowledgeBase, type KBSearchResult } from '../db/knowledge-base.js';
+import { isLLMAvailable, generateAnswer } from './llm-service.js';
 
 export interface RAGResponse {
   answer: string;
@@ -146,11 +149,39 @@ const graphPatterns: Array<{
 
 export class RAGService {
   private graphService: GraphService;
+  private swarmService: SwarmService;
   private db: Database.Database;
 
   constructor(db: Database.Database) {
     this.db = db;
     this.graphService = new GraphService(db);
+    this.swarmService = new SwarmService(db);
+  }
+
+  async queryWithLLM(swarmId: string, question: string): Promise<RAGResponse> {
+    // Get the base response from pattern matching
+    const baseResponse = this.query(swarmId, question);
+
+    // If LLM is available, enhance the answer
+    if (isLLMAvailable()) {
+      const swarm = this.swarmService.findById(swarmId);
+      const swarmSummary = swarm
+        ? `Swarm "${swarm.name}" has ${swarm.agents.length} agents across ${swarm.layers.length} layers with ${swarm.relationships.length} relationships. Agents: ${swarm.agents.map(a => `${a.nickname} (${a.descriptor}, badges: ${a.badges.join(',')})`).join('; ')}`
+        : 'No swarm data available';
+
+      const docSnippets = baseResponse.sources.map(s => `[${s.category}] ${s.title}: ${s.snippet}`).join('\n');
+      const graphData = baseResponse.graphHighlights.length > 0
+        ? `Relevant agents: ${baseResponse.graphHighlights.join(', ')}. ${baseResponse.answer}`
+        : '';
+
+      const llmAnswer = await generateAnswer(question, { graphData, docSnippets, swarmSummary });
+      if (llmAnswer) {
+        baseResponse.answer = llmAnswer;
+        baseResponse.queryType = 'both';
+      }
+    }
+
+    return baseResponse;
   }
 
   query(swarmId: string, question: string): RAGResponse {

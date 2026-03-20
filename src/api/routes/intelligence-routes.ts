@@ -10,7 +10,7 @@ export function createIntelligenceRoutes(db: Database.Database): Router {
   const ragService = new RAGService(db);
 
   // POST /api/intelligence/ask
-  router.post('/ask', (req: Req, res: Response) => {
+  router.post('/ask', async (req: Req, res: Response) => {
     const { question, swarmId } = req.body;
     if (!question || typeof question !== 'string') {
       res.status(400).json({ error: 'validation', message: 'Question is required.' });
@@ -18,8 +18,14 @@ export function createIntelligenceRoutes(db: Database.Database): Router {
     }
 
     const sid = swarmId || 'ecommerce-standard-v1';
-    const result = ragService.query(sid, question);
-    res.json({ data: result });
+    try {
+      const result = await ragService.queryWithLLM(sid, question);
+      res.json({ data: result });
+    } catch {
+      // Fall back to non-LLM query
+      const result = ragService.query(sid, question);
+      res.json({ data: result });
+    }
   });
 
   return router;
