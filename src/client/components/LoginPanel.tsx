@@ -38,7 +38,7 @@ export function LoginPanel({ onLogin, onSkip }: Props) {
         borderRadius: 16, padding: 32, width: 360, maxWidth: '90%',
       }}>
         <h1 style={{ color: '#00d9ff', fontSize: 22, letterSpacing: 2, textTransform: 'uppercase', textAlign: 'center', marginBottom: 4 }}>
-          Agent Modus Map
+          Agent Modus
         </h1>
         <p style={{ color: '#64748b', fontSize: 13, textAlign: 'center', marginBottom: 24 }}>Sign in to collaborate</p>
 

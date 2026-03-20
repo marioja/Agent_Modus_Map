@@ -6,7 +6,7 @@ interface Props {
 
 const STEPS = [
   {
-    title: 'Welcome to Agent Modus Map',
+    title: 'Welcome to Agent Modus',
     content: 'Your enterprise tool for designing, monitoring, and optimizing multi-agent swarms. No coding required.',
     highlight: 'Get started by exploring the canvas or loading a template.',
   },

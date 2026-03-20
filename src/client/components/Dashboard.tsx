@@ -74,7 +74,7 @@ export function Dashboard({ onOpenSwarm }: DashboardProps) {
         <h1 style={{
           textAlign: 'center', color: '#00d9ff', fontSize: 36, letterSpacing: 4,
           textTransform: 'uppercase', textShadow: '0 0 20px rgba(0,217,255,0.4)', marginBottom: 8,
-        }}>Agent Modus Map</h1>
+        }}>Agent Modus</h1>
         <p style={{ textAlign: 'center', color: '#8b9dc3', fontSize: 16, marginBottom: 40 }}>
           Design, monitor, and optimize multi-agent swarms
         </p>

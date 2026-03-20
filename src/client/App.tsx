@@ -4,7 +4,7 @@ import { Dashboard } from './components/Dashboard.js';
 import { SwarmCanvas } from './components/SwarmCanvas.js';
 import { EditorToolbar, type EditorMode } from './components/EditorToolbar.js';
 import { AgentPalette } from './components/AgentPalette.js';
-import { PropertyEditor } from './components/PropertyEditor.js';
+import { AgentModusModal } from './components/AgentModusModal.js';
 import { RelationshipOrchestrator } from './components/RelationshipOrchestrator.js';
 import { ValidationPanel, validateSwarm } from './components/ValidationPanel.js';
 import { ChatPanel } from './components/ChatPanel.js';
@@ -307,8 +307,9 @@ export function App() {
           <ChatPanel swarmId={swarmId} isOpen={chatOpen} onToggle={() => setChatOpen(!chatOpen)} />
 
           {selectedAgent && editorOpen && (
-            <PropertyEditor
+            <AgentModusModal
               agent={selectedAgent}
+              swarm={swarm}
               layers={swarm.layers}
               onSave={handleSaveAgent}
               onDelete={handleDeleteAgent}
