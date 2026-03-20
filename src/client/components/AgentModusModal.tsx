@@ -207,7 +207,7 @@ export function AgentModusModal({ agent, swarm, layers, onSave, onDelete, onClos
         </div>
 
         {/* Body */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '20px 30px' }}>
+        <div style={{ flex: 1, overflowY: 'auto', minHeight: 0, padding: '20px 30px' }}>
 
           {section === 'overview' && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
