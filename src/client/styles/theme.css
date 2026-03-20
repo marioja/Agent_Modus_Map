@@ -97,6 +97,12 @@
   --scrollbar-track: #111827;
   --scrollbar-thumb: #1e293b;
 
+  /* Logo colors - 500 level (AAA on dark bg) */
+  --logo-cyan: #00c8b8;
+  --logo-amethyst: #8b5cf6;
+  --logo-sapphire: #3b82f6;
+  --logo-emerald: #10b981;
+
   color-scheme: dark;
 }
 
@@ -126,6 +132,12 @@
 
   --scrollbar-track: #eef2f8;
   --scrollbar-thumb: #cbd5e1;
+
+  /* Logo colors - 700/900 level (AA+ on light bg) */
+  --logo-cyan: #005f58;
+  --logo-amethyst: #5b21b6;
+  --logo-sapphire: #1e40af;
+  --logo-emerald: #047857;
 
   color-scheme: light;
 }

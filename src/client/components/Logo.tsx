@@ -6,22 +6,19 @@ interface Props {
 }
 
 export function Logo({ size = 36 }: Props) {
+  // Theme-adaptive colors: 500s for dark (AAA on dark bg), 700s for light (AA+ on light bg)
+  const cyan = 'var(--logo-cyan)';
+  const amethyst = 'var(--logo-amethyst)';
+  const sapphire = 'var(--logo-sapphire)';
+  const emerald = 'var(--logo-emerald)';
+
   return (
     <svg width={size} height={size} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-      {/* Outer circle - deep cyan */}
-      <circle cx="50" cy="50" r="46" stroke="#007a72" strokeWidth="2.5" opacity="0.9" />
-
-      {/* A shape - deep amethyst */}
-      <path d="M50 12 L22 78 L32 78 L50 30 L68 78 L78 78 Z" stroke="#7c3aed" strokeWidth="2.5" strokeLinejoin="round" fill="none" />
-
-      {/* A crossbar - deep sapphire */}
-      <line x1="33" y1="60" x2="67" y2="60" stroke="#1d4ed8" strokeWidth="2.2" />
-
-      {/* M shape - deep cyan */}
-      <path d="M18 80 L34 28 L50 58 L66 28 L82 80" stroke="#007a72" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" fill="none" />
-
-      {/* Central diamond - deep emerald */}
-      <path d="M50 42 L44 52 L50 62 L56 52 Z" stroke="#059669" strokeWidth="1.8" fill="#059669" fillOpacity="0.3" />
+      <circle cx="50" cy="50" r="46" stroke={cyan} strokeWidth="2.5" opacity="0.9" />
+      <path d="M50 12 L22 78 L32 78 L50 30 L68 78 L78 78 Z" stroke={amethyst} strokeWidth="2.5" strokeLinejoin="round" fill="none" />
+      <line x1="33" y1="60" x2="67" y2="60" stroke={sapphire} strokeWidth="2.2" />
+      <path d="M18 80 L34 28 L50 58 L66 28 L82 80" stroke={cyan} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" fill="none" />
+      <path d="M50 42 L44 52 L50 62 L56 52 Z" stroke={emerald} strokeWidth="1.8" fill={emerald} fillOpacity="0.3" />
     </svg>
   );
 }
@@ -36,8 +33,8 @@ export function LogoWithText({ size = 36 }: { size?: number }) {
         letterSpacing: '-0.03em',
         lineHeight: 1,
       }}>
-        <span style={{ color: '#007a72' }}>Agent</span>
-        <span style={{ color: '#7c3aed' }}>Modus</span>
+        <span style={{ color: 'var(--logo-cyan)' }}>Agent</span>
+        <span style={{ color: 'var(--logo-amethyst)' }}>Modus</span>
       </div>
     </div>
   );
