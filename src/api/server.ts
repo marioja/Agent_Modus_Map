@@ -5,8 +5,16 @@ import { createSwarmRoutes } from './routes/swarm-routes.js';
 import { createIntelligenceRoutes } from './routes/intelligence-routes.js';
 import { createTemplateRoutes } from './routes/template-routes.js';
 import { createHealthRoutes } from './routes/health-routes.js';
+import { createDecisionTraceRoutes } from './routes/decision-trace-routes.js';
+import { createGovernanceRoutes } from './routes/governance-routes.js';
+import { createCollaborationRoutes } from './routes/collaboration-routes.js';
+import { createOptimizationRoutes } from './routes/optimization-routes.js';
+import { createDocGenerationRoutes } from './routes/doc-generation-routes.js';
 import { initKnowledgeBase, seedKnowledgeBase } from './db/knowledge-base.js';
 import { initHealthStore } from './db/health-store.js';
+import { initDecisionTraceStore } from './db/decision-trace-store.js';
+import { initAuditStore } from './db/audit-store.js';
+import { initVersionStore } from './db/version-store.js';
 
 export function createApp(db?: ReturnType<typeof getDb>) {
   const app = express();
@@ -14,6 +22,9 @@ export function createApp(db?: ReturnType<typeof getDb>) {
 
   initKnowledgeBase(database);
   initHealthStore(database);
+  initDecisionTraceStore(database);
+  initAuditStore(database);
+  initVersionStore(database);
 
   app.use(cors());
   app.use(express.json({ limit: '10mb' }));
@@ -22,6 +33,11 @@ export function createApp(db?: ReturnType<typeof getDb>) {
   app.use('/api/intelligence', createIntelligenceRoutes(database));
   app.use('/api/templates', createTemplateRoutes(database));
   app.use('/api/monitoring', createHealthRoutes(database));
+  app.use('/api/traces', createDecisionTraceRoutes(database));
+  app.use('/api/governance', createGovernanceRoutes(database));
+  app.use('/api/collaboration', createCollaborationRoutes(database));
+  app.use('/api/optimization', createOptimizationRoutes(database));
+  app.use('/api/docs', createDocGenerationRoutes(database));
 
   // Health check
   app.get('/api/health', (_req, res) => {
@@ -38,6 +54,9 @@ if (isMain) {
   initKnowledgeBase(database);
   seedKnowledgeBase(database);
   initHealthStore(database);
+  initDecisionTraceStore(database);
+  initAuditStore(database);
+  initVersionStore(database);
 
   // Seed health history if empty
   const count = (database.prepare('SELECT COUNT(*) as c FROM health_reports').get() as any)?.c || 0;
