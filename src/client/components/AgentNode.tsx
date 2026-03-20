@@ -12,6 +12,7 @@ export interface AgentNodeData {
   isInBlastRadius: boolean;
   blastRadiusHops: number | null;
   emoji?: string;
+  healthStatus?: 'healthy' | 'degraded' | 'unhealthy' | 'unknown';
 }
 
 const badgeColors: Record<string, { bg: string; border: string }> = {
@@ -76,6 +77,19 @@ function AgentNodeComponent({ data }: NodeProps) {
         }}>
           {d.blastRadiusHops}
         </div>
+      )}
+
+      <style>{`@keyframes healthPulse { 0%,100%{opacity:1} 50%{opacity:0.4} }`}</style>
+
+      {/* Health indicator */}
+      {d.healthStatus && d.healthStatus !== 'unknown' && (
+        <div style={{
+          position: 'absolute', top: 8, right: 8,
+          width: 12, height: 12, borderRadius: '50%',
+          background: d.healthStatus === 'healthy' ? '#22c55e' : d.healthStatus === 'degraded' ? '#fbbf24' : '#ef4444',
+          boxShadow: `0 0 8px ${d.healthStatus === 'healthy' ? '#22c55e' : d.healthStatus === 'degraded' ? '#fbbf24' : '#ef4444'}`,
+          animation: d.healthStatus !== 'healthy' ? 'healthPulse 2s ease-in-out infinite' : 'none',
+        }} />
       )}
 
       {d.emoji && (

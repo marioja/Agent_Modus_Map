@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { ReactFlowProvider } from '@xyflow/react';
+import { Dashboard } from './components/Dashboard.js';
 import { SwarmCanvas } from './components/SwarmCanvas.js';
-import { RelationshipPanel } from './components/RelationshipPanel.js';
-import { Header } from './components/Header.js';
+import { EditorToolbar, type EditorMode } from './components/EditorToolbar.js';
 import { AgentPalette } from './components/AgentPalette.js';
 import { PropertyEditor } from './components/PropertyEditor.js';
+import { RelationshipOrchestrator } from './components/RelationshipOrchestrator.js';
 import { ValidationPanel, validateSwarm } from './components/ValidationPanel.js';
 import { ChatPanel } from './components/ChatPanel.js';
-import { TemplateBrowser } from './components/TemplateBrowser.js';
 import { HealthDashboard } from './components/HealthDashboard.js';
 import { DecisionTraceViewer } from './components/DecisionTraceViewer.js';
 import { GovernancePanel } from './components/GovernancePanel.js';
@@ -16,116 +16,106 @@ import { OptimizationPanel } from './components/OptimizationPanel.js';
 import { DocViewer } from './components/DocViewer.js';
 import { OnboardingOverlay } from './components/OnboardingOverlay.js';
 import { KeyboardShortcutsHelp } from './components/KeyboardShortcutsHelp.js';
-import { LoginPanel } from './components/LoginPanel.js';
 import { CollaborationCursors } from './components/CollaborationCursors.js';
 import { useCollaboration } from './hooks/useCollaboration.js';
 import {
   getSwarm, getBlastRadius, exportSwarm, importSwarm,
-  getSwarmHealthSummary, getAuthToken, setAuthToken, getHTMLExportUrl,
+  getSwarmHealthSummary, getHTMLExportUrl,
   createAgent, updateAgent, deleteAgent,
   createRelationship, deleteRelationship,
 } from './api.js';
-import type { SwarmHealthSummary, AuthToken } from './api.js';
+import type { SwarmHealthSummary } from './api.js';
 import type { Swarm, Agent, BlastRadiusResult, RelationshipType, Badge } from '../shared/types/index.js';
 
-const DEFAULT_SWARM_ID = 'ecommerce-standard-v1';
 const ONBOARDING_KEY = 'agentModusMap_onboardingDismissed';
 
+type AppView = 'dashboard' | 'editor';
+
 export function App() {
-  const [swarmId, setSwarmId] = useState(DEFAULT_SWARM_ID);
+  const [view, setView] = useState<AppView>('dashboard');
+  const [swarmId, setSwarmId] = useState('');
   const [swarm, setSwarm] = useState<Swarm | null>(null);
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   const [blastRadius, setBlastRadius] = useState<BlastRadiusResult[]>([]);
   const [showBlastRadius, setShowBlastRadius] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [editorMode, setEditorMode] = useState<EditorMode>('design');
+
+  // Panel states
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [editorOpen, setEditorOpen] = useState(false);
   const [validationOpen, setValidationOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
-  const [templateBrowserOpen, setTemplateBrowserOpen] = useState(false);
+  const [orchestratorOpen, setOrchestratorOpen] = useState(false);
   const [healthDashboardOpen, setHealthDashboardOpen] = useState(false);
-  const [healthSummary, setHealthSummary] = useState<SwarmHealthSummary | null>(null);
   const [tracesOpen, setTracesOpen] = useState(false);
   const [governanceOpen, setGovernanceOpen] = useState(false);
   const [collaborationOpen, setCollaborationOpen] = useState(false);
   const [optimizationOpen, setOptimizationOpen] = useState(false);
   const [docsOpen, setDocsOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [healthSummary, setHealthSummary] = useState<SwarmHealthSummary | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(() => !localStorage.getItem(ONBOARDING_KEY));
-  const [showLogin, setShowLogin] = useState(false);
-  const [currentUser, setCurrentUser] = useState<AuthToken['user'] | null>(null);
+
   const collab = useCollaboration(swarmId);
 
   const reloadSwarm = useCallback(async (id?: string) => {
     const targetId = id || swarmId;
+    if (!targetId) return null;
     const data = await getSwarm(targetId);
     setSwarm(data);
     return data;
   }, [swarmId]);
 
-  useEffect(() => {
-    reloadSwarm()
-      .catch(err => setError(err.message))
-      .finally(() => setLoading(false));
-  }, [reloadSwarm]);
+  // Open a swarm from dashboard
+  const handleOpenSwarm = useCallback(async (id: string) => {
+    setSwarmId(id);
+    setLoading(true);
+    setSelectedAgent(null);
+    setEditorOpen(false);
+    try {
+      const data = await getSwarm(id);
+      setSwarm(data);
+      setView('editor');
+    } catch (err) {
+      console.error('Failed to load swarm:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  // Poll health summary
+  const handleBack = useCallback(() => {
+    setView('dashboard');
+    setSwarm(null);
+    setSwarmId('');
+    setSelectedAgent(null);
+  }, []);
+
+  // Poll health
   useEffect(() => {
+    if (!swarmId || view !== 'editor') return;
     getSwarmHealthSummary(swarmId).then(setHealthSummary).catch(() => {});
     const interval = setInterval(() => {
       getSwarmHealthSummary(swarmId).then(setHealthSummary).catch(() => {});
     }, 15000);
     return () => clearInterval(interval);
-  }, [swarmId]);
+  }, [swarmId, view]);
 
   // Keyboard shortcuts
   useEffect(() => {
+    if (view !== 'editor') return;
     const handler = (e: KeyboardEvent) => {
-      // Skip if user is typing in an input
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-
       switch (e.key) {
         case '?': setShortcutsOpen(v => !v); break;
-        case 'p': case 'P': setPaletteOpen(v => !v); break;
-        case 'v': case 'V': setValidationOpen(v => !v); break;
-        case 'c': case 'C': setChatOpen(v => !v); break;
-        case 'h': case 'H': setHealthDashboardOpen(v => !v); break;
-        case 't': case 'T': setTemplateBrowserOpen(v => !v); break;
-        case 'd': case 'D': setTracesOpen(v => !v); break;
-        case 'g': case 'G': setGovernanceOpen(v => !v); break;
-        case 'o': case 'O': setOptimizationOpen(v => !v); break;
-        case 'l': case 'L': setCollaborationOpen(v => !v); break;
-        case 'Escape':
-          setSelectedAgent(null);
-          setEditorOpen(false);
-          setShortcutsOpen(false);
-          break;
+        case 'Escape': setSelectedAgent(null); setEditorOpen(false); setShortcutsOpen(false); break;
       }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, []);
+  }, [view]);
 
-  const dismissOnboarding = useCallback(() => {
-    localStorage.setItem(ONBOARDING_KEY, 'true');
-    setShowOnboarding(false);
-  }, []);
-
-  const handleLogin = useCallback((auth: AuthToken) => {
-    setCurrentUser(auth.user);
-    setShowLogin(false);
-  }, []);
-
-  const handleLogout = useCallback(() => {
-    setAuthToken(null);
-    setCurrentUser(null);
-  }, []);
-
-  const handleExportHTML = useCallback(() => {
-    window.open(getHTMLExportUrl(swarmId), '_blank');
-  }, [swarmId]);
-
+  // Agent interactions
   const handleSelectAgent = useCallback(async (agent: Agent | null) => {
     setSelectedAgent(agent);
     if (agent) {
@@ -153,25 +143,17 @@ export function App() {
 
   const handleDropAgent = useCallback(async (position: { x: number; y: number }, templateJson: string) => {
     try {
-      const template = JSON.parse(templateJson) as {
-        nickname: string; formalName: string; descriptor: string;
-        badges: Badge[]; layerId: string;
-      };
+      const template = JSON.parse(templateJson);
       const existing = swarm?.agents.map(a => a.nickname) || [];
       let nickname = template.nickname;
       let counter = 2;
-      while (existing.includes(nickname)) {
-        nickname = `${template.nickname}${counter}`;
-        counter++;
-      }
+      while (existing.includes(nickname)) { nickname = `${template.nickname}${counter}`; counter++; }
       await createAgent(swarmId, {
         nickname, formalName: template.formalName, descriptor: template.descriptor,
         badges: template.badges, layerId: template.layerId, position, config: {},
       });
       await reloadSwarm();
-    } catch (err) {
-      console.error('Failed to create agent:', err);
-    }
+    } catch (err) { console.error('Failed to create agent:', err); }
   }, [swarm, swarmId, reloadSwarm]);
 
   const handleDeleteAgent = useCallback(async (agentId: string) => {
@@ -184,7 +166,7 @@ export function App() {
   const handleSaveAgent = useCallback(async (agentId: string, changes: Partial<Agent>) => {
     await updateAgent(swarmId, agentId, changes);
     const updated = await reloadSwarm();
-    const refreshed = updated.agents.find(a => a.id === agentId);
+    const refreshed = updated?.agents.find(a => a.id === agentId);
     if (refreshed) setSelectedAgent(refreshed);
   }, [swarmId, reloadSwarm]);
 
@@ -196,9 +178,7 @@ export function App() {
     try {
       await createRelationship(swarmId, { sourceAgentId: sourceId, targetAgentId: targetId, type });
       await reloadSwarm();
-    } catch (err) {
-      console.error('Failed to create relationship:', err);
-    }
+    } catch (err) { console.error('Failed to create relationship:', err); }
   }, [swarmId, reloadSwarm]);
 
   const handleDeleteEdge = useCallback(async (edgeId: string) => {
@@ -206,7 +186,7 @@ export function App() {
     await reloadSwarm();
   }, [swarmId, reloadSwarm]);
 
-  const handleExport = useCallback(async () => {
+  const handleExportJSON = useCallback(async () => {
     const data = await exportSwarm(swarmId);
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -216,6 +196,10 @@ export function App() {
     a.click();
     URL.revokeObjectURL(url);
   }, [swarmId, swarm]);
+
+  const handleExportHTML = useCallback(() => {
+    window.open(getHTMLExportUrl(swarmId), '_blank');
+  }, [swarmId]);
 
   const handleImport = useCallback(async () => {
     const input = document.createElement('input');
@@ -228,27 +212,11 @@ export function App() {
       try {
         const data = JSON.parse(text);
         const imported = await importSwarm(data);
-        setSwarmId(imported.id);
-        setSwarm(imported);
-        setSelectedAgent(null);
-      } catch (err) {
-        console.error('Import failed:', err);
-      }
+        handleOpenSwarm(imported.id);
+      } catch (err) { console.error('Import failed:', err); }
     };
     input.click();
-  }, []);
-
-  const handleSwarmCreated = useCallback(async (newSwarmId: string) => {
-    setSwarmId(newSwarmId);
-    setSelectedAgent(null);
-    setEditorOpen(false);
-    setLoading(true);
-    try {
-      await reloadSwarm(newSwarmId);
-    } finally {
-      setLoading(false);
-    }
-  }, [reloadSwarm]);
+  }, [handleOpenSwarm]);
 
   const validationMessages = useMemo(() => {
     if (!swarm) return [];
@@ -257,12 +225,26 @@ export function App() {
 
   const selectedAgentDependents = useMemo(() => {
     if (!selectedAgent || !swarm) return 0;
-    return swarm.relationships.filter(
-      r => r.targetAgentId === selectedAgent.id && r.type === 'dependsOn'
-    ).length;
+    return swarm.relationships.filter(r => r.targetAgentId === selectedAgent.id && r.type === 'dependsOn').length;
   }, [selectedAgent, swarm]);
 
-  if (loading) {
+  const dismissOnboarding = useCallback(() => {
+    localStorage.setItem(ONBOARDING_KEY, 'true');
+    setShowOnboarding(false);
+  }, []);
+
+  // Dashboard view
+  if (view === 'dashboard') {
+    return (
+      <>
+        <Dashboard onOpenSwarm={handleOpenSwarm} />
+        {showOnboarding && <OnboardingOverlay onDismiss={dismissOnboarding} />}
+      </>
+    );
+  }
+
+  // Loading state
+  if (loading || !swarm) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', color: '#00d9ff', fontSize: 20 }}>
         Loading swarm...
@@ -270,48 +252,41 @@ export function App() {
     );
   }
 
-  if (error || !swarm) {
-    return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', color: '#ef4444', fontSize: 18 }}>
-        {error || 'Failed to load swarm. Run `npm run seed` then `npm run dev:api`.'}
-      </div>
-    );
-  }
-
+  // Editor view
   return (
     <ReactFlowProvider>
       <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
-        <Header
+        <EditorToolbar
           swarmName={swarm.name}
           agentCount={swarm.agents.length}
           relationshipCount={swarm.relationships.length}
-          showBlastRadius={showBlastRadius}
-          onToggleBlastRadius={handleToggleBlastRadius}
-          onOpenTemplates={() => setTemplateBrowserOpen(true)}
-          onExport={handleExport}
-          onImport={handleImport}
+          mode={editorMode}
+          onModeChange={setEditorMode}
+          onBack={handleBack}
+          healthStatus={healthSummary?.overall}
+          onTogglePalette={() => setPaletteOpen(!paletteOpen)}
+          onToggleChat={() => setChatOpen(!chatOpen)}
+          onToggleValidation={() => setValidationOpen(!validationOpen)}
+          onToggleOrchestrator={() => setOrchestratorOpen(!orchestratorOpen)}
           onOpenHealth={() => setHealthDashboardOpen(true)}
           onOpenTraces={() => setTracesOpen(true)}
           onOpenGovernance={() => setGovernanceOpen(true)}
-          onOpenOptimization={() => setOptimizationOpen(true)}
           onOpenCollaboration={() => setCollaborationOpen(true)}
+          onOpenOptimization={() => setOptimizationOpen(true)}
           onOpenDocs={() => setDocsOpen(true)}
+          onExportJSON={handleExportJSON}
           onExportHTML={handleExportHTML}
-          healthStatus={healthSummary?.overall}
+          onImport={handleImport}
+          showBlastRadius={showBlastRadius}
+          onToggleBlastRadius={handleToggleBlastRadius}
         />
-        <div style={{ flex: 1, position: 'relative' }}>
-          <CollaborationCursors
-            cursors={collab.cursors}
-            users={collab.users}
-            connected={collab.connected}
-          />
 
-          <AgentPalette
-            layers={swarm.layers}
-            onDragStart={() => {}}
-            isOpen={paletteOpen}
-            onToggle={() => setPaletteOpen(!paletteOpen)}
-          />
+        <div style={{ flex: 1, position: 'relative' }}>
+          <CollaborationCursors cursors={collab.cursors} users={collab.users} connected={collab.connected} />
+
+          {editorMode === 'design' && (
+            <AgentPalette layers={swarm.layers} onDragStart={() => {}} isOpen={paletteOpen} onToggle={() => setPaletteOpen(!paletteOpen)} />
+          )}
 
           <SwarmCanvas
             swarm={swarm}
@@ -325,27 +300,11 @@ export function App() {
             onDeleteEdge={handleDeleteEdge}
           />
 
-          <ValidationPanel
-            messages={validationMessages}
-            isOpen={validationOpen}
-            onToggle={() => setValidationOpen(!validationOpen)}
-          />
-
-          <ChatPanel
-            swarmId={swarmId}
-            isOpen={chatOpen}
-            onToggle={() => setChatOpen(!chatOpen)}
-          />
-
-          {selectedAgent && !editorOpen && (
-            <RelationshipPanel
-              agent={selectedAgent}
-              swarm={swarm}
-              blastRadius={blastRadius}
-              showBlastRadius={showBlastRadius}
-              onClose={() => handleSelectAgent(null)}
-            />
+          {editorMode === 'design' && (
+            <ValidationPanel messages={validationMessages} isOpen={validationOpen} onToggle={() => setValidationOpen(!validationOpen)} />
           )}
+
+          <ChatPanel swarmId={swarmId} isOpen={chatOpen} onToggle={() => setChatOpen(!chatOpen)} />
 
           {selectedAgent && editorOpen && (
             <PropertyEditor
@@ -357,59 +316,26 @@ export function App() {
               dependentCount={selectedAgentDependents}
             />
           )}
+
+          {editorMode === 'design' && (
+            <RelationshipOrchestrator
+              swarm={swarm}
+              isOpen={orchestratorOpen}
+              onToggle={() => setOrchestratorOpen(!orchestratorOpen)}
+              onCreateRelationship={handleConnect}
+              onDeleteRelationship={handleDeleteEdge}
+            />
+          )}
         </div>
       </div>
 
-      <TemplateBrowser
-        isOpen={templateBrowserOpen}
-        onClose={() => setTemplateBrowserOpen(false)}
-        onSwarmCreated={handleSwarmCreated}
-      />
-
-      <HealthDashboard
-        swarmId={swarmId}
-        isOpen={healthDashboardOpen}
-        onClose={() => setHealthDashboardOpen(false)}
-      />
-
-      <DecisionTraceViewer
-        swarmId={swarmId}
-        isOpen={tracesOpen}
-        onClose={() => setTracesOpen(false)}
-      />
-
-      <GovernancePanel
-        swarmId={swarmId}
-        isOpen={governanceOpen}
-        onClose={() => setGovernanceOpen(false)}
-      />
-
-      <CollaborationPanel
-        swarmId={swarmId}
-        swarm={swarm}
-        isOpen={collaborationOpen}
-        onClose={() => setCollaborationOpen(false)}
-      />
-
-      <OptimizationPanel
-        swarmId={swarmId}
-        isOpen={optimizationOpen}
-        onClose={() => setOptimizationOpen(false)}
-      />
-
-      <DocViewer
-        swarmId={swarmId}
-        isOpen={docsOpen}
-        onClose={() => setDocsOpen(false)}
-      />
-
-      <KeyboardShortcutsHelp
-        isOpen={shortcutsOpen}
-        onClose={() => setShortcutsOpen(false)}
-      />
-
-      {showOnboarding && <OnboardingOverlay onDismiss={dismissOnboarding} />}
-      {showLogin && <LoginPanel onLogin={handleLogin} onSkip={() => setShowLogin(false)} />}
+      <HealthDashboard swarmId={swarmId} isOpen={healthDashboardOpen} onClose={() => setHealthDashboardOpen(false)} />
+      <DecisionTraceViewer swarmId={swarmId} isOpen={tracesOpen} onClose={() => setTracesOpen(false)} />
+      <GovernancePanel swarmId={swarmId} isOpen={governanceOpen} onClose={() => setGovernanceOpen(false)} />
+      <CollaborationPanel swarmId={swarmId} swarm={swarm} isOpen={collaborationOpen} onClose={() => setCollaborationOpen(false)} />
+      <OptimizationPanel swarmId={swarmId} isOpen={optimizationOpen} onClose={() => setOptimizationOpen(false)} />
+      <DocViewer swarmId={swarmId} isOpen={docsOpen} onClose={() => setDocsOpen(false)} />
+      <KeyboardShortcutsHelp isOpen={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
     </ReactFlowProvider>
   );
 }

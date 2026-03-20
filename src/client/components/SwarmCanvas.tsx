@@ -71,6 +71,7 @@ export function SwarmCanvas({
         isInBlastRadius: !!isInBlastRadius,
         blastRadiusHops: isInBlastRadius ? blastHops : null,
         emoji: (agent.config as any)?.emoji || undefined,
+        healthStatus: undefined, // Will be populated by parent when health data is available
       };
 
       return {
