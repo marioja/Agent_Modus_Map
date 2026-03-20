@@ -5,6 +5,7 @@ import { SwarmCanvas } from './components/SwarmCanvas.js';
 import { EditorToolbar, type EditorMode } from './components/EditorToolbar.js';
 import { AgentPalette } from './components/AgentPalette.js';
 import { AgentModusModal } from './components/AgentModusModal.js';
+import { AgentBuilderWizard, type AgentFormData } from './components/AgentBuilderWizard.js';
 import { RelationshipOrchestrator } from './components/RelationshipOrchestrator.js';
 import { ValidationPanel, validateSwarm } from './components/ValidationPanel.js';
 import { ChatPanel } from './components/ChatPanel.js';
@@ -47,6 +48,7 @@ export function App() {
   const [validationOpen, setValidationOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [orchestratorOpen, setOrchestratorOpen] = useState(false);
+  const [wizardOpen, setWizardOpen] = useState(false);
   const [healthDashboardOpen, setHealthDashboardOpen] = useState(false);
   const [tracesOpen, setTracesOpen] = useState(false);
   const [governanceOpen, setGovernanceOpen] = useState(false);
@@ -156,6 +158,14 @@ export function App() {
     } catch (err) { console.error('Failed to create agent:', err); }
   }, [swarm, swarmId, reloadSwarm]);
 
+  const handleCreateFromWizard = useCallback(async (data: AgentFormData) => {
+    try {
+      await createAgent(swarmId, data);
+      await reloadSwarm();
+      setWizardOpen(false);
+    } catch (err) { console.error('Failed to create agent:', err); }
+  }, [swarmId, reloadSwarm]);
+
   const handleDeleteAgent = useCallback(async (agentId: string) => {
     await deleteAgent(swarmId, agentId);
     setSelectedAgent(null);
@@ -264,7 +274,7 @@ export function App() {
           onModeChange={setEditorMode}
           onBack={handleBack}
           healthStatus={healthSummary?.overall}
-          onTogglePalette={() => setPaletteOpen(!paletteOpen)}
+          onTogglePalette={() => setWizardOpen(true)}
           onToggleChat={() => setChatOpen(!chatOpen)}
           onToggleValidation={() => setValidationOpen(!validationOpen)}
           onToggleOrchestrator={() => setOrchestratorOpen(!orchestratorOpen)}
@@ -337,6 +347,15 @@ export function App() {
       <OptimizationPanel swarmId={swarmId} isOpen={optimizationOpen} onClose={() => setOptimizationOpen(false)} />
       <DocViewer swarmId={swarmId} isOpen={docsOpen} onClose={() => setDocsOpen(false)} />
       <KeyboardShortcutsHelp isOpen={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
+
+      {wizardOpen && swarm && (
+        <AgentBuilderWizard
+          layers={swarm.layers}
+          existingNicknames={swarm.agents.map(a => a.nickname)}
+          onCreate={handleCreateFromWizard}
+          onCancel={() => setWizardOpen(false)}
+        />
+      )}
     </ReactFlowProvider>
   );
 }
