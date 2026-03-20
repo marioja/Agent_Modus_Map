@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { getTemplates, instantiateTemplate, type TemplateInfo } from '../api.js';
+import { getTemplates, instantiateTemplate, createBlankSwarm, listSwarms, type TemplateInfo } from '../api.js';
+import type { Swarm } from '../../shared/types/index.js';
 
 const domainColors: Record<string, string> = {
   'Support': '#00d9ff',
@@ -7,6 +8,11 @@ const domainColors: Record<string, string> = {
   'Retail': '#22c55e',
   'Engineering': '#fb923c',
   'Logistics': '#fbbf24',
+  'Data': '#06b6d4',
+  'Security': '#ef4444',
+  'Research': '#3b82f6',
+  'Sales': '#06b6d4',
+  'HR': '#3b82f6',
 };
 
 interface TemplateBrowserProps {
@@ -17,15 +23,35 @@ interface TemplateBrowserProps {
 
 export function TemplateBrowser({ isOpen, onClose, onSwarmCreated }: TemplateBrowserProps) {
   const [templates, setTemplates] = useState<TemplateInfo[]>([]);
+  const [existingSwarms, setExistingSwarms] = useState<Swarm[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateInfo | null>(null);
+  const [mode, setMode] = useState<'choose' | 'blank' | 'template' | 'existing'>('choose');
   const [swarmName, setSwarmName] = useState('');
   const [creating, setCreating] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       getTemplates().then(setTemplates).catch(console.error);
+      listSwarms().then(setExistingSwarms).catch(console.error);
+      setMode('choose');
+      setSelectedTemplate(null);
+      setSwarmName('');
     }
   }, [isOpen]);
+
+  async function handleCreateBlank() {
+    if (!swarmName.trim()) return;
+    setCreating(true);
+    try {
+      const swarm = await createBlankSwarm(swarmName.trim());
+      onSwarmCreated(swarm.id);
+      onClose();
+    } catch (err) {
+      console.error('Failed to create blank swarm:', err);
+    } finally {
+      setCreating(false);
+    }
+  }
 
   async function handleCreate() {
     if (!selectedTemplate || !swarmName.trim()) return;
@@ -66,13 +92,114 @@ export function TemplateBrowser({ isOpen, onClose, onSwarmCreated }: TemplateBro
         overflowY: 'auto',
       }} onClick={e => e.stopPropagation()}>
         <h2 style={{ color: '#00d9ff', fontSize: 22, marginBottom: 8, textAlign: 'center' }}>
-          Start from a Template
+          {mode === 'choose' ? 'Create a Swarm' : mode === 'blank' ? 'Start from Scratch' : mode === 'existing' ? 'Open Existing' : 'Start from Template'}
         </h2>
         <p style={{ color: '#8b9dc3', fontSize: 13, textAlign: 'center', marginBottom: 24 }}>
-          Choose a proven architecture and customize it for your needs.
+          {mode === 'choose' ? 'Design from scratch, use a template, or open an existing swarm.' :
+           mode === 'blank' ? 'Name your swarm and start with a blank canvas.' :
+           mode === 'existing' ? 'Switch to a swarm you already created.' :
+           'Choose a proven architecture and customize it for your needs.'}
         </p>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {mode !== 'choose' && (
+          <button onClick={() => setMode('choose')} style={{
+            background: 'none', border: 'none', color: '#00d9ff', cursor: 'pointer',
+            fontSize: 12, marginBottom: 16, padding: 0,
+          }}>Back to options</button>
+        )}
+
+        {/* Choose mode */}
+        {mode === 'choose' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div onClick={() => setMode('blank')} style={{
+              padding: 20, borderRadius: 14, border: '2px solid rgba(0,217,255,0.3)',
+              background: 'rgba(0,217,255,0.05)', cursor: 'pointer', transition: 'all 0.2s',
+            }}>
+              <div style={{ fontSize: 18, fontWeight: 600, color: '#00d9ff' }}>Start from Scratch</div>
+              <div style={{ fontSize: 13, color: '#94a3b8', marginTop: 6 }}>
+                Blank canvas with 4 default layers. Add agents and connections as you design.
+              </div>
+            </div>
+
+            <div onClick={() => setMode('template')} style={{
+              padding: 20, borderRadius: 14, border: '2px solid rgba(168,85,247,0.3)',
+              background: 'rgba(168,85,247,0.05)', cursor: 'pointer', transition: 'all 0.2s',
+            }}>
+              <div style={{ fontSize: 18, fontWeight: 600, color: '#a855f7' }}>Use a Template</div>
+              <div style={{ fontSize: 13, color: '#94a3b8', marginTop: 6 }}>
+                {templates.length} industry templates with pre-built agents and relationships.
+              </div>
+            </div>
+
+            {existingSwarms.length > 1 && (
+              <div onClick={() => setMode('existing')} style={{
+                padding: 20, borderRadius: 14, border: '2px solid rgba(34,197,94,0.3)',
+                background: 'rgba(34,197,94,0.05)', cursor: 'pointer', transition: 'all 0.2s',
+              }}>
+                <div style={{ fontSize: 18, fontWeight: 600, color: '#22c55e' }}>Open Existing</div>
+                <div style={{ fontSize: 13, color: '#94a3b8', marginTop: 6 }}>
+                  {existingSwarms.length} swarms available. Switch to a different design.
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Blank canvas mode */}
+        {mode === 'blank' && (
+          <div style={{ padding: 16, background: 'rgba(0,217,255,0.05)', borderRadius: 12 }}>
+            <label style={{ fontSize: 12, color: '#8b9dc3', display: 'block', marginBottom: 6 }}>
+              Name your swarm
+            </label>
+            <input
+              value={swarmName}
+              onChange={e => setSwarmName(e.target.value)}
+              placeholder="My Agent Swarm"
+              autoFocus
+              style={{
+                width: '100%', padding: '10px 14px', borderRadius: 8,
+                border: '1px solid rgba(0,217,255,0.3)', background: 'rgba(0,0,0,0.3)',
+                color: '#fff', fontSize: 14, outline: 'none', boxSizing: 'border-box',
+              }}
+            />
+            <div style={{ color: '#64748b', fontSize: 12, marginTop: 8 }}>
+              You'll get 4 default layers: Interface, Processing, Intelligence, Operations. You can customize them later.
+            </div>
+            <button
+              onClick={handleCreateBlank}
+              disabled={creating || !swarmName.trim()}
+              style={{
+                width: '100%', marginTop: 12, padding: '12px', borderRadius: 10,
+                border: 'none', background: '#00d9ff', color: '#0a0e27',
+                fontWeight: 700, fontSize: 15, cursor: creating ? 'default' : 'pointer',
+                opacity: creating || !swarmName.trim() ? 0.5 : 1,
+              }}
+            >
+              {creating ? 'Creating...' : 'Create Blank Swarm'}
+            </button>
+          </div>
+        )}
+
+        {/* Existing swarms mode */}
+        {mode === 'existing' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {existingSwarms.map(s => (
+              <div key={s.id} onClick={() => { onSwarmCreated(s.id); onClose(); }} style={{
+                padding: 14, borderRadius: 10, border: '1px solid rgba(255,255,255,0.08)',
+                background: 'rgba(255,255,255,0.03)', cursor: 'pointer', transition: 'all 0.2s',
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ fontSize: 15, fontWeight: 600, color: '#fff' }}>{s.name}</div>
+                  <div style={{ fontSize: 12, color: '#64748b' }}>{s.agents.length} agents</div>
+                </div>
+                {s.description && <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 4 }}>{s.description.slice(0, 100)}</div>}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Template mode */}
+        {mode === 'template' && <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {templates.map(template => {
             const color = domainColors[template.domain] || '#8b9dc3';
             const isSelected = selectedTemplate?.id === template.id;
@@ -119,9 +246,9 @@ export function TemplateBrowser({ isOpen, onClose, onSwarmCreated }: TemplateBro
               </div>
             );
           })}
-        </div>
+        </div>}
 
-        {selectedTemplate && (
+        {mode === 'template' && selectedTemplate && (
           <div style={{ marginTop: 20, padding: 16, background: 'rgba(0,217,255,0.05)', borderRadius: 12 }}>
             <label style={{ fontSize: 12, color: '#8b9dc3', display: 'block', marginBottom: 6 }}>
               Name your swarm

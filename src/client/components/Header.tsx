@@ -85,7 +85,7 @@ export function Header({
         <button onClick={onOpenOptimization} style={btnStyle}>Optimize</button>
         <button onClick={onOpenCollaboration} style={btnStyle}>Collab</button>
         <button onClick={onOpenDocs} style={btnStyle}>Docs</button>
-        <button onClick={onOpenTemplates} style={btnStyle}>+ Template</button>
+        <button onClick={onOpenTemplates} style={{ ...btnStyle, background: 'rgba(0,217,255,0.15)', fontWeight: 700 }}>+ New / Templates</button>
         <button onClick={onImport} style={btnStyle}>Import</button>
         <button onClick={onExport} style={btnStyle}>Export</button>
         <button

@@ -14,12 +14,28 @@ export class SwarmService {
     return this.loadSwarm(id);
   }
 
-  create(data: { name: string; description?: string }): Swarm {
+  create(data: { name: string; description?: string; layers?: Array<{ name: string; colorTheme: string; order: number }> }): Swarm {
     const id = uuidv7();
     const now = new Date().toISOString();
     this.db.prepare(
       'INSERT INTO swarms (id, name, description, created_at, updated_at) VALUES (?, ?, ?, ?, ?)'
     ).run(id, data.name, data.description || '', now, now);
+
+    // Seed default layers if none provided
+    const layers = data.layers || [
+      { name: 'Interface', colorTheme: '#00d9ff', order: 1 },
+      { name: 'Processing', colorTheme: '#a855f7', order: 2 },
+      { name: 'Intelligence', colorTheme: '#22c55e', order: 3 },
+      { name: 'Operations', colorTheme: '#fbbf24', order: 4 },
+    ];
+
+    const insertLayer = this.db.prepare(
+      'INSERT INTO layers (id, swarm_id, name, color_theme, display_order) VALUES (?, ?, ?, ?, ?)'
+    );
+    for (const layer of layers) {
+      insertLayer.run(uuidv7(), id, layer.name, layer.colorTheme, layer.order);
+    }
+
     return this.loadSwarm(id)!;
   }
 

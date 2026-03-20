@@ -47,6 +47,14 @@ export async function getSwarm(id: string): Promise<Swarm> {
   return fetchJson(`/swarms/${id}`);
 }
 
+export async function createBlankSwarm(name: string, description?: string): Promise<Swarm> {
+  return postJson('/swarms', { name, description: description || '' });
+}
+
+export async function listSwarms(): Promise<Swarm[]> {
+  return fetchJson('/swarms');
+}
+
 export async function getBlastRadius(swarmId: string, agentNickname: string, hops = 3): Promise<BlastRadiusResult[]> {
   return fetchJson(`/swarms/${swarmId}/graph/blast-radius?agent=${encodeURIComponent(agentNickname)}&hops=${hops}`);
 }
