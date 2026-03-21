@@ -83,7 +83,7 @@ export function AgentPalette({ layers, onDragStart, isOpen, onToggle }: AgentPal
           width: 32,
           height: 32,
           borderRadius: 8,
-          background: '#1e293b',
+          background: 'var(--bg-elevated)',
           border: '1px solid rgba(0, 217, 255, 0.3)',
           color: '#00d9ff',
           cursor: 'pointer',

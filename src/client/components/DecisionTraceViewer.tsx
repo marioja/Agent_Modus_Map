@@ -43,19 +43,19 @@ export function DecisionTraceViewer({ swarmId, isOpen, onClose }: Props) {
       display: 'flex', alignItems: 'center', justifyContent: 'center',
     }}>
       <div style={{
-        background: '#0a1628', border: '1px solid #1e3a5f', borderRadius: 12,
+        background: 'var(--bg-base)', border: '1px solid var(--border-default)', borderRadius: 12,
         width: '90%', maxWidth: 900, maxHeight: '85vh', overflow: 'hidden',
         display: 'flex', flexDirection: 'column',
       }}>
-        <div style={{ padding: '16px 20px', borderBottom: '1px solid #1e3a5f', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-default)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-            <h2 style={{ margin: 0, color: '#e2e8f0', fontSize: 18 }}>Decision Traces</h2>
+            <h2 style={{ margin: 0, color: 'var(--text-primary)', fontSize: 18 }}>Decision Traces</h2>
             <div style={{ display: 'flex', gap: 4 }}>
               <button onClick={() => setTab('traces')} style={tabStyle(tab === 'traces')}>Traces</button>
               <button onClick={() => setTab('patterns')} style={tabStyle(tab === 'patterns')}>Patterns</button>
             </div>
           </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: 18 }}>X</button>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: 18 }}>X</button>
         </div>
 
         <div style={{ flex: 1, overflow: 'auto', padding: 20 }}>
@@ -69,11 +69,11 @@ export function DecisionTraceViewer({ swarmId, isOpen, onClose }: Props) {
                     onClick={() => setSelectedTrace(trace)}
                     style={{
                       padding: '10px 12px', marginBottom: 8, borderRadius: 8, cursor: 'pointer',
-                      background: selectedTrace?.id === trace.id ? '#1e3a5f' : '#0f1f35',
-                      border: `1px solid ${selectedTrace?.id === trace.id ? '#00d9ff' : '#1e3a5f'}`,
+                      background: selectedTrace?.id === trace.id ? 'var(--bg-overlay)' : 'var(--bg-surface)',
+                      border: `1px solid ${selectedTrace?.id === trace.id ? '#00d9ff' : 'var(--bg-overlay)'}`,
                     }}
                   >
-                    <div style={{ color: '#e2e8f0', fontSize: 13, fontWeight: 600 }}>{trace.title}</div>
+                    <div style={{ color: 'var(--text-primary)', fontSize: 13, fontWeight: 600 }}>{trace.title}</div>
                     <div style={{ color: '#64748b', fontSize: 11, marginTop: 4 }}>
                       {trace.agentNickname} | {new Date(trace.timestamp).toLocaleString()}
                     </div>
@@ -81,7 +81,7 @@ export function DecisionTraceViewer({ swarmId, isOpen, onClose }: Props) {
                       {trace.stages.map((s, i) => (
                         <span key={i} style={{
                           width: 20, height: 20, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          background: STAGE_COLORS[s.stage] || '#475569', color: '#fff', fontSize: 10, fontWeight: 700,
+                          background: STAGE_COLORS[s.stage] || 'var(--text-secondary)', color: '#fff', fontSize: 10, fontWeight: 700,
                         }}>{STAGE_ICONS[s.stage] || '?'}</span>
                       ))}
                       <span style={{ marginLeft: 'auto', color: '#64748b', fontSize: 11 }}>
@@ -94,29 +94,29 @@ export function DecisionTraceViewer({ swarmId, isOpen, onClose }: Props) {
               <div style={{ flex: 1 }}>
                 {selectedTrace ? (
                   <div>
-                    <h3 style={{ color: '#e2e8f0', margin: '0 0 8px' }}>{selectedTrace.title}</h3>
+                    <h3 style={{ color: 'var(--text-primary)', margin: '0 0 8px' }}>{selectedTrace.title}</h3>
                     <div style={{ color: '#64748b', fontSize: 12, marginBottom: 16 }}>
                       Agent: {selectedTrace.agentNickname} | Confidence: {Math.round(selectedTrace.confidence * 100)}% | Duration: {selectedTrace.durationMs}ms
                     </div>
                     {selectedTrace.tags.length > 0 && (
                       <div style={{ display: 'flex', gap: 6, marginBottom: 16, flexWrap: 'wrap' }}>
                         {selectedTrace.tags.map(tag => (
-                          <span key={tag} style={{ background: '#1e3a5f', color: '#00d9ff', padding: '2px 8px', borderRadius: 12, fontSize: 11 }}>{tag}</span>
+                          <span key={tag} style={{ background: 'var(--bg-overlay)', color: '#00d9ff', padding: '2px 8px', borderRadius: 12, fontSize: 11 }}>{tag}</span>
                         ))}
                       </div>
                     )}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                       {selectedTrace.stages.map((stage, i) => (
                         <div key={i} style={{
-                          padding: 14, borderRadius: 8, background: '#0f1f35',
-                          borderLeft: `3px solid ${STAGE_COLORS[stage.stage] || '#475569'}`,
+                          padding: 14, borderRadius: 8, background: 'var(--bg-surface)',
+                          borderLeft: `3px solid ${STAGE_COLORS[stage.stage] || 'var(--text-secondary)'}`,
                         }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                             <span style={{
                               width: 24, height: 24, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              background: STAGE_COLORS[stage.stage] || '#475569', color: '#fff', fontSize: 11, fontWeight: 700,
+                              background: STAGE_COLORS[stage.stage] || 'var(--text-secondary)', color: '#fff', fontSize: 11, fontWeight: 700,
                             }}>{STAGE_ICONS[stage.stage] || '?'}</span>
-                            <span style={{ color: '#e2e8f0', fontWeight: 600, fontSize: 13, textTransform: 'capitalize' }}>{stage.stage}</span>
+                            <span style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: 13, textTransform: 'capitalize' }}>{stage.stage}</span>
                           </div>
                           <p style={{ color: '#cbd5e1', fontSize: 13, margin: 0, lineHeight: 1.6 }}>{stage.content}</p>
                         </div>
@@ -135,14 +135,14 @@ export function DecisionTraceViewer({ swarmId, isOpen, onClose }: Props) {
               {patterns.length === 0 && <p style={{ color: '#64748b' }}>No patterns detected yet. Patterns emerge as more decision traces are recorded.</p>}
               {patterns.map(p => (
                 <div key={p.pattern} style={{
-                  padding: 14, marginBottom: 10, borderRadius: 8, background: '#0f1f35',
-                  border: '1px solid #1e3a5f',
+                  padding: 14, marginBottom: 10, borderRadius: 8, background: 'var(--bg-surface)',
+                  border: '1px solid var(--border-default)',
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ color: '#00d9ff', fontWeight: 600 }}>{p.pattern}</span>
                     <span style={{ color: '#64748b', fontSize: 12 }}>{p.occurrences} occurrences</span>
                   </div>
-                  <div style={{ color: '#94a3b8', fontSize: 12, marginTop: 6 }}>
+                  <div style={{ color: 'var(--text-secondary)', fontSize: 12, marginTop: 6 }}>
                     Agents: {p.agents.join(', ')} | Avg confidence: {Math.round(p.avgConfidence * 100)}% | Avg duration: {Math.round(p.avgDurationMs)}ms
                   </div>
                 </div>
@@ -158,7 +158,7 @@ export function DecisionTraceViewer({ swarmId, isOpen, onClose }: Props) {
 function tabStyle(active: boolean): React.CSSProperties {
   return {
     padding: '4px 12px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600,
-    background: active ? '#00d9ff' : '#1e3a5f',
-    color: active ? '#0a1628' : '#94a3b8',
+    background: active ? '#00d9ff' : 'var(--bg-overlay)',
+    color: active ? 'var(--text-inverse)' : 'var(--text-secondary)',
   };
 }

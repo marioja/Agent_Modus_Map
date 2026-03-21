@@ -42,22 +42,22 @@ export function DocViewer({ swarmId, isOpen, onClose }: Props) {
       display: 'flex', alignItems: 'center', justifyContent: 'center',
     }}>
       <div style={{
-        background: '#0a1628', border: '1px solid #1e3a5f', borderRadius: 12,
+        background: 'var(--bg-base)', border: '1px solid var(--border-default)', borderRadius: 12,
         width: '90%', maxWidth: 800, maxHeight: '85vh', overflow: 'hidden',
         display: 'flex', flexDirection: 'column',
       }}>
-        <div style={{ padding: '16px 20px', borderBottom: '1px solid #1e3a5f', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h2 style={{ margin: 0, color: '#e2e8f0', fontSize: 18 }}>Generated Documentation</h2>
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-default)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h2 style={{ margin: 0, color: 'var(--text-primary)', fontSize: 18 }}>Generated Documentation</h2>
           <div style={{ display: 'flex', gap: 8 }}>
             <button onClick={handleCopy} style={{
-              padding: '6px 12px', borderRadius: 6, border: '1px solid #1e3a5f',
-              background: 'transparent', color: '#94a3b8', cursor: 'pointer', fontSize: 12,
+              padding: '6px 12px', borderRadius: 6, border: '1px solid var(--border-default)',
+              background: 'transparent', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: 12,
             }}>Copy</button>
             <button onClick={handleDownload} style={{
               padding: '6px 12px', borderRadius: 6, border: 'none',
-              background: '#00d9ff', color: '#0a1628', cursor: 'pointer', fontSize: 12, fontWeight: 600,
+              background: '#00d9ff', color: 'var(--text-inverse)', cursor: 'pointer', fontSize: 12, fontWeight: 600,
             }}>Download .md</button>
-            <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: 18 }}>X</button>
+            <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: 18 }}>X</button>
           </div>
         </div>
 

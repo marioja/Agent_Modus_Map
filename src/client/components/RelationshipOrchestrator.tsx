@@ -100,7 +100,7 @@ export function RelationshipOrchestrator({ swarm, isOpen, onToggle, onCreateRela
             <button key={t} onClick={() => setTab(t)} style={{
               padding: '4px 12px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 600,
               background: tab === t ? '#00d9ff' : 'rgba(255,255,255,0.06)',
-              color: tab === t ? '#0a1628' : '#64748b',
+              color: tab === t ? 'var(--text-inverse)' : '#64748b',
             }}>{t === 'quick' ? 'Quick Connect' : t === 'pipeline' ? 'Pipeline Builder' : t === 'bulk' ? 'Bulk / Suggest' : 'Existing'}</button>
           ))}
         </div>
@@ -133,8 +133,8 @@ export function RelationshipOrchestrator({ swarm, isOpen, onToggle, onCreateRela
             </div>
             <button onClick={handleQuickConnect} disabled={!sourceNickname || !targetNickname} style={{
               padding: '8px 20px', borderRadius: 6, border: 'none', cursor: 'pointer',
-              background: sourceNickname && targetNickname ? '#00d9ff' : '#1e293b',
-              color: sourceNickname && targetNickname ? '#0a1628' : '#475569',
+              background: sourceNickname && targetNickname ? '#00d9ff' : 'var(--bg-elevated)',
+              color: sourceNickname && targetNickname ? 'var(--text-inverse)' : 'var(--text-secondary)',
               fontWeight: 700, fontSize: 13, whiteSpace: 'nowrap',
             }}>Connect</button>
           </div>
@@ -143,14 +143,14 @@ export function RelationshipOrchestrator({ swarm, isOpen, onToggle, onCreateRela
         {/* Pipeline Builder */}
         {tab === 'pipeline' && (
           <div>
-            <p style={{ color: '#94a3b8', fontSize: 12, marginBottom: 10 }}>
+            <p style={{ color: 'var(--text-secondary)', fontSize: 12, marginBottom: 10 }}>
               Build a data pipeline by adding agents in order. Each connects to the next via "Feeds Into".
             </p>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
               {pipelineAgents.map((name, i) => (
                 <React.Fragment key={i}>
                   <span style={{
-                    padding: '4px 10px', borderRadius: 8, background: '#1e293b',
+                    padding: '4px 10px', borderRadius: 8, background: 'var(--bg-elevated)',
                     color: '#00d9ff', fontSize: 12, fontWeight: 600, border: '1px solid #00d9ff30',
                   }}>
                     {name}
@@ -169,8 +169,8 @@ export function RelationshipOrchestrator({ swarm, isOpen, onToggle, onCreateRela
               </select>
               <button onClick={handlePipelineCreate} disabled={pipelineAgents.length < 2} style={{
                 padding: '8px 20px', borderRadius: 6, border: 'none', cursor: 'pointer',
-                background: pipelineAgents.length >= 2 ? '#a855f7' : '#1e293b',
-                color: pipelineAgents.length >= 2 ? '#fff' : '#475569',
+                background: pipelineAgents.length >= 2 ? '#a855f7' : 'var(--bg-elevated)',
+                color: pipelineAgents.length >= 2 ? '#fff' : 'var(--text-secondary)',
                 fontWeight: 700, fontSize: 13, whiteSpace: 'nowrap',
               }}>Create Pipeline ({Math.max(0, pipelineAgents.length - 1)} connections)</button>
             </div>
@@ -188,9 +188,9 @@ export function RelationshipOrchestrator({ swarm, isOpen, onToggle, onCreateRela
                     display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px',
                     borderRadius: 6, background: 'rgba(251,191,36,0.05)', marginBottom: 4,
                   }}>
-                    <span style={{ color: '#e2e8f0', fontSize: 12, fontWeight: 600 }}>{s.source}</span>
+                    <span style={{ color: 'var(--text-primary)', fontSize: 12, fontWeight: 600 }}>{s.source}</span>
                     <span style={{ color: REL_COLORS[s.type], fontSize: 11 }}>{REL_LABELS[s.type]}</span>
-                    <span style={{ color: '#e2e8f0', fontSize: 12, fontWeight: 600 }}>{s.target}</span>
+                    <span style={{ color: 'var(--text-primary)', fontSize: 12, fontWeight: 600 }}>{s.target}</span>
                     <span style={{ color: '#64748b', fontSize: 10, flex: 1 }}>{s.reason}</span>
                     <button onClick={() => {
                       const src = agentMap.get(s.source);
@@ -223,9 +223,9 @@ export function RelationshipOrchestrator({ swarm, isOpen, onToggle, onCreateRela
                   borderRadius: 6, background: 'rgba(255,255,255,0.03)',
                   borderLeft: `3px solid ${REL_COLORS[rel.type]}`,
                 }}>
-                  <span style={{ color: '#e2e8f0', fontSize: 12, fontWeight: 600 }}>{source.nickname}</span>
+                  <span style={{ color: 'var(--text-primary)', fontSize: 12, fontWeight: 600 }}>{source.nickname}</span>
                   <span style={{ color: REL_COLORS[rel.type], fontSize: 10 }}>{REL_LABELS[rel.type]}</span>
-                  <span style={{ color: '#e2e8f0', fontSize: 12, fontWeight: 600 }}>{target.nickname}</span>
+                  <span style={{ color: 'var(--text-primary)', fontSize: 12, fontWeight: 600 }}>{target.nickname}</span>
                   <div style={{ flex: 1 }} />
                   <button onClick={() => onDeleteRelationship(rel.id)} style={{
                     background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: 12,

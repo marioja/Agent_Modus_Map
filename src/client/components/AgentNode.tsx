@@ -42,7 +42,7 @@ function AgentNodeComponent({ data }: NodeProps) {
   return (
     <div style={{
       width: 220,
-      background: 'linear-gradient(145deg, #1e293b 0%, #0f172a 100%)',
+      background: 'var(--bg-elevated)',
       borderRadius: 16,
       padding: '16px 14px',
       border: `3px solid ${d.isSelected ? '#ffffff' : d.isInBlastRadius ? '#ef4444' : d.layerColor}`,
@@ -74,7 +74,7 @@ function AgentNodeComponent({ data }: NodeProps) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          border: '2px solid #0f172a',
+          border: '2px solid var(--bg-surface)',
         }}>
           {d.blastRadiusHops}
         </div>

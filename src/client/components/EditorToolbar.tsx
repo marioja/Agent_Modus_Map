@@ -112,7 +112,7 @@ export function EditorToolbar(props: EditorToolbarProps) {
             padding: '6px 16px', borderRadius: 6, border: 'none', cursor: 'pointer',
             fontSize: 12, fontWeight: 700, textTransform: 'capitalize',
             background: mode === m ? modeColors[m] : 'transparent',
-            color: mode === m ? '#0a1628' : '#64748b',
+            color: mode === m ? 'var(--text-inverse)' : '#64748b',
             transition: 'all 0.2s',
           }}>{m}</button>
         ))}

@@ -32,7 +32,7 @@ export function ConnectionTypeModal({ onSelect, onCancel }: ConnectionTypeModalP
     >
       <div
         style={{
-          background: 'linear-gradient(145deg, #1e293b, #0f172a)',
+          background: 'var(--bg-elevated)',
           border: '2px solid rgba(0, 217, 255, 0.3)',
           borderRadius: 16,
           padding: 24,

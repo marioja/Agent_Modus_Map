@@ -63,7 +63,7 @@ export function HealthDashboard({ swarmId, isOpen, onClose }: HealthDashboardPro
       zIndex: 100,
     }} onClick={onClose}>
       <div style={{
-        background: 'linear-gradient(145deg, #1e293b, #0f172a)',
+        background: 'var(--bg-elevated)',
         border: '1px solid rgba(0, 217, 255, 0.3)',
         borderRadius: 20,
         padding: 24,

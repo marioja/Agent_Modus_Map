@@ -207,12 +207,12 @@ export function SwarmCanvas({
         <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="rgba(0, 217, 255, 0.06)" />
         <Controls
           position="bottom-left"
-          style={{ background: '#1e293b', border: '1px solid rgba(0, 217, 255, 0.3)', borderRadius: 10 }}
+          style={{ background: 'var(--bg-elevated)', border: '1px solid rgba(0, 217, 255, 0.3)', borderRadius: 10 }}
         />
         <MiniMap
           position="bottom-right"
           style={{
-            background: '#0f172a',
+            background: 'var(--bg-surface)',
             border: '1px solid rgba(0, 217, 255, 0.2)',
             borderRadius: 10,
           }}

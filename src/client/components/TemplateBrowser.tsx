@@ -83,7 +83,7 @@ export function TemplateBrowser({ isOpen, onClose, onSwarmCreated }: TemplateBro
       zIndex: 100,
     }} onClick={onClose}>
       <div style={{
-        background: 'linear-gradient(145deg, #1e293b, #0f172a)',
+        background: 'var(--bg-elevated)',
         border: '2px solid rgba(0, 217, 255, 0.3)',
         borderRadius: 20,
         padding: 30,
@@ -116,7 +116,7 @@ export function TemplateBrowser({ isOpen, onClose, onSwarmCreated }: TemplateBro
               background: 'rgba(0,217,255,0.05)', cursor: 'pointer', transition: 'all 0.2s',
             }}>
               <div style={{ fontSize: 18, fontWeight: 600, color: '#00d9ff' }}>Start from Scratch</div>
-              <div style={{ fontSize: 13, color: '#94a3b8', marginTop: 6 }}>
+              <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 6 }}>
                 Blank canvas with 4 default layers. Add agents and connections as you design.
               </div>
             </div>
@@ -126,7 +126,7 @@ export function TemplateBrowser({ isOpen, onClose, onSwarmCreated }: TemplateBro
               background: 'rgba(168,85,247,0.05)', cursor: 'pointer', transition: 'all 0.2s',
             }}>
               <div style={{ fontSize: 18, fontWeight: 600, color: '#a855f7' }}>Use a Template</div>
-              <div style={{ fontSize: 13, color: '#94a3b8', marginTop: 6 }}>
+              <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 6 }}>
                 {templates.length} industry templates with pre-built agents and relationships.
               </div>
             </div>
@@ -136,7 +136,7 @@ export function TemplateBrowser({ isOpen, onClose, onSwarmCreated }: TemplateBro
               background: 'rgba(251,191,36,0.05)', cursor: 'pointer', transition: 'all 0.2s',
             }}>
               <div style={{ fontSize: 18, fontWeight: 600, color: '#fbbf24' }}>Import from CSV</div>
-              <div style={{ fontSize: 13, color: '#94a3b8', marginTop: 6 }}>
+              <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 6 }}>
                 Upload a spreadsheet with agent definitions, relationships, and config.
               </div>
             </div>
@@ -147,7 +147,7 @@ export function TemplateBrowser({ isOpen, onClose, onSwarmCreated }: TemplateBro
                 background: 'rgba(34,197,94,0.05)', cursor: 'pointer', transition: 'all 0.2s',
               }}>
                 <div style={{ fontSize: 18, fontWeight: 600, color: '#22c55e' }}>Open Existing</div>
-                <div style={{ fontSize: 13, color: '#94a3b8', marginTop: 6 }}>
+                <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 6 }}>
                   {existingSwarms.length} swarms available. Switch to a different design.
                 </div>
               </div>
@@ -180,7 +180,7 @@ export function TemplateBrowser({ isOpen, onClose, onSwarmCreated }: TemplateBro
               disabled={creating || !swarmName.trim()}
               style={{
                 width: '100%', marginTop: 12, padding: '12px', borderRadius: 10,
-                border: 'none', background: '#00d9ff', color: '#0a1628',
+                border: 'none', background: '#00d9ff', color: 'var(--text-inverse)',
                 fontWeight: 700, fontSize: 15, cursor: creating ? 'default' : 'pointer',
                 opacity: creating || !swarmName.trim() ? 0.5 : 1,
               }}
@@ -202,7 +202,7 @@ export function TemplateBrowser({ isOpen, onClose, onSwarmCreated }: TemplateBro
                   <div style={{ fontSize: 15, fontWeight: 600, color: '#fff' }}>{s.name}</div>
                   <div style={{ fontSize: 12, color: '#64748b' }}>{s.agents.length} agents</div>
                 </div>
-                {s.description && <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 4 }}>{s.description.slice(0, 100)}</div>}
+                {s.description && <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 4 }}>{s.description.slice(0, 100)}</div>}
               </div>
             ))}
           </div>
@@ -213,7 +213,7 @@ export function TemplateBrowser({ isOpen, onClose, onSwarmCreated }: TemplateBro
           <div>
             <div style={{ padding: 16, background: 'rgba(251,191,36,0.05)', borderRadius: 12, marginBottom: 16, border: '1px solid rgba(251,191,36,0.2)' }}>
               <div style={{ color: '#fbbf24', fontSize: 13, fontWeight: 600, marginBottom: 8 }}>CSV Format</div>
-              <div style={{ color: '#94a3b8', fontSize: 12, lineHeight: 1.6 }}>
+              <div style={{ color: 'var(--text-secondary)', fontSize: 12, lineHeight: 1.6 }}>
                 Columns: Nickname, Emoji, Formal Name, Descriptor, Layer, Badges, Core Task, Inputs, Outputs, Depends On, Feeds Into, Collaborates With, Can Override
                 <br />Use semicolons (;) to separate multiple values within a cell.
               </div>
@@ -229,7 +229,7 @@ export function TemplateBrowser({ isOpen, onClose, onSwarmCreated }: TemplateBro
               textAlign: 'center', cursor: 'pointer', transition: 'all 0.3s',
             }} onClick={() => document.getElementById('csvFileInput')?.click()}>
               <div style={{ fontSize: 36, marginBottom: 10 }}>📤</div>
-              <div style={{ color: '#94a3b8', fontSize: 14 }}>Click to upload CSV file</div>
+              <div style={{ color: 'var(--text-secondary)', fontSize: 14 }}>Click to upload CSV file</div>
               <div style={{ color: '#64748b', fontSize: 12, marginTop: 6 }}>or paste CSV data below</div>
             </div>
             <input type="file" id="csvFileInput" accept=".csv" style={{ display: 'none' }} onChange={async (e) => {
@@ -259,7 +259,7 @@ export function TemplateBrowser({ isOpen, onClose, onSwarmCreated }: TemplateBro
               } catch (err) { console.error(err); } finally { setCreating(false); }
             }} disabled={creating} style={{
               width: '100%', marginTop: 12, padding: '12px', borderRadius: 10, border: 'none',
-              background: '#fbbf24', color: '#0a1628', fontWeight: 700, fontSize: 15,
+              background: '#fbbf24', color: 'var(--text-inverse)', fontWeight: 700, fontSize: 15,
               cursor: creating ? 'default' : 'pointer', opacity: creating ? 0.5 : 1,
             }}>
               {creating ? 'Importing...' : 'Import from Pasted CSV'}
@@ -346,7 +346,7 @@ export function TemplateBrowser({ isOpen, onClose, onSwarmCreated }: TemplateBro
                 borderRadius: 10,
                 border: 'none',
                 background: '#00d9ff',
-                color: '#0a1628',
+                color: 'var(--text-inverse)',
                 fontWeight: 700,
                 fontSize: 15,
                 cursor: creating ? 'default' : 'pointer',

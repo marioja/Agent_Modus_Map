@@ -144,7 +144,7 @@ export function AgentModusModal({ agent, swarm, layers, onSave, onDelete, onClos
       display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
     }}>
       <div style={{
-        background: 'linear-gradient(145deg, #1e293b 0%, #0f172a 100%)',
+        background: 'var(--bg-elevated)',
         border: `3px solid ${borderColor}`, borderRadius: 20,
         width: '95%', maxWidth: 1000, maxHeight: '90vh',
         display: 'flex', flexDirection: 'column',
@@ -153,8 +153,23 @@ export function AgentModusModal({ agent, swarm, layers, onSave, onDelete, onClos
 
         {/* Header - Agent Identity */}
         <div style={{ padding: '24px 30px', borderBottom: `2px solid ${borderColor}40`, display: 'flex', gap: 24, alignItems: 'flex-start', flexShrink: 0 }}>
-          <div style={{ flex: '0 0 auto' }}>
+          <div style={{ flex: '0 0 auto', position: 'relative', cursor: 'pointer' }} title="Click to change emoji">
             <div style={{ fontSize: 64, textAlign: 'center' }}>{getAgentEmoji(agent.nickname, agent.formalName, config.emoji)}</div>
+            <input
+              value={config.emoji || ''}
+              onChange={e => updateConfig({ emoji: e.target.value })}
+              placeholder="emoji"
+              maxLength={4}
+              style={{
+                position: 'absolute', bottom: -4, left: '50%', transform: 'translateX(-50%)',
+                width: 48, textAlign: 'center', fontSize: 11, padding: '2px 4px',
+                background: 'var(--bg-overlay)', border: '1px solid var(--border-default)',
+                borderRadius: 4, color: 'var(--text-secondary)', outline: 'none',
+                fontFamily: 'var(--font-primary)', opacity: 0.6,
+              }}
+              onFocus={e => { (e.target as HTMLInputElement).style.opacity = '1'; }}
+              onBlur={e => { (e.target as HTMLInputElement).style.opacity = '0.6'; }}
+            />
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 4 }}>
@@ -212,17 +227,17 @@ export function AgentModusModal({ agent, swarm, layers, onSave, onDelete, onClos
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
               <InfoCard title="Layer" value={layer?.name || layerId}>
                 <select value={layerId} onChange={e => { setLayerId(e.target.value); mark(); }} style={{ ...inp, cursor: 'pointer' }}>
-                  {layers.map(l => <option key={l.id} value={l.id} style={{ background: '#1e293b' }}>{l.name}</option>)}
+                  {layers.map(l => <option key={l.id} value={l.id} style={{ background: 'var(--bg-elevated)' }}>{l.name}</option>)}
                 </select>
               </InfoCard>
               <InfoCard title="Autonomy Level" value={config.autonomyLevel || 'Not set'}>
                 <select value={config.autonomyLevel || ''} onChange={e => updateConfig({ autonomyLevel: e.target.value })} style={{ ...inp, cursor: 'pointer' }}>
-                  <option value="" style={{ background: '#1e293b' }}>Select...</option>
-                  <option value="Fully Automated" style={{ background: '#1e293b' }}>Fully Automated</option>
-                  <option value="Human-in-Loop" style={{ background: '#1e293b' }}>Human-in-Loop</option>
-                  <option value="Hybrid" style={{ background: '#1e293b' }}>Hybrid</option>
-                  <option value="Advisory Only" style={{ background: '#1e293b' }}>Advisory Only</option>
-                  <option value="Manual" style={{ background: '#1e293b' }}>Manual</option>
+                  <option value="" style={{ background: 'var(--bg-elevated)' }}>Select...</option>
+                  <option value="Fully Automated" style={{ background: 'var(--bg-elevated)' }}>Fully Automated</option>
+                  <option value="Human-in-Loop" style={{ background: 'var(--bg-elevated)' }}>Human-in-Loop</option>
+                  <option value="Hybrid" style={{ background: 'var(--bg-elevated)' }}>Hybrid</option>
+                  <option value="Advisory Only" style={{ background: 'var(--bg-elevated)' }}>Advisory Only</option>
+                  <option value="Manual" style={{ background: 'var(--bg-elevated)' }}>Manual</option>
                 </select>
               </InfoCard>
               <InfoCard title="Relationships" value={`${rels.dependsOn.length + rels.feedsInto.length + rels.collaboratesWith.length + rels.canOverride.length} connections`} />
@@ -243,12 +258,12 @@ export function AgentModusModal({ agent, swarm, layers, onSave, onDelete, onClos
               <textarea value={config.triggerConditions || ''} onChange={e => updateConfig({ triggerConditions: e.target.value })} placeholder="Activates whenever new content is submitted (posts, comments, uploads, profile updates)" style={{ ...inp, minHeight: 50, fontFamily: 'inherit' }} />
               <label style={lbl}>Autonomy Level</label>
               <select value={config.autonomyLevel || ''} onChange={e => updateConfig({ autonomyLevel: e.target.value })} style={{ ...inp, cursor: 'pointer' }}>
-                <option value="" style={{ background: '#1e293b' }}>Select...</option>
-                <option value="Fully Automated" style={{ background: '#1e293b' }}>Fully Automated</option>
-                <option value="Human-in-Loop" style={{ background: '#1e293b' }}>Human-in-Loop</option>
-                <option value="Hybrid" style={{ background: '#1e293b' }}>Hybrid (auto-approve obvious, flag gray areas)</option>
-                <option value="Advisory Only" style={{ background: '#1e293b' }}>Advisory Only</option>
-                <option value="Manual" style={{ background: '#1e293b' }}>Manual</option>
+                <option value="" style={{ background: 'var(--bg-elevated)' }}>Select...</option>
+                <option value="Fully Automated" style={{ background: 'var(--bg-elevated)' }}>Fully Automated</option>
+                <option value="Human-in-Loop" style={{ background: 'var(--bg-elevated)' }}>Human-in-Loop</option>
+                <option value="Hybrid" style={{ background: 'var(--bg-elevated)' }}>Hybrid (auto-approve obvious, flag gray areas)</option>
+                <option value="Advisory Only" style={{ background: 'var(--bg-elevated)' }}>Advisory Only</option>
+                <option value="Manual" style={{ background: 'var(--bg-elevated)' }}>Manual</option>
               </select>
 
               <SectionHeader title="System Prompt" />
@@ -264,7 +279,7 @@ export function AgentModusModal({ agent, swarm, layers, onSave, onDelete, onClos
                 <div style={{ flex: 1 }}>
                   <label style={lbl}>Provider</label>
                   <select value={config.modelConfig?.provider || 'anthropic'} onChange={e => updateConfig({ modelConfig: { ...config.modelConfig, provider: e.target.value } })} style={{ ...inp, cursor: 'pointer' }}>
-                    {['anthropic','openai','google','mistral','meta','local'].map(p => <option key={p} value={p} style={{ background: '#1e293b' }}>{p}</option>)}
+                    {['anthropic','openai','google','mistral','meta','local'].map(p => <option key={p} value={p} style={{ background: 'var(--bg-elevated)' }}>{p}</option>)}
                   </select>
                 </div>
                 <div style={{ flex: 1 }}>
@@ -415,7 +430,7 @@ export function AgentModusModal({ agent, swarm, layers, onSave, onDelete, onClos
               <SectionHeader title="General Notes" />
               {(config.notes || []).map((n, i) => (
                 <div key={n.id} style={{ ...card, position: 'relative' }}>
-                  <p style={{ color: '#e2e8f0', fontSize: 13, margin: 0, whiteSpace: 'pre-wrap' }}>{n.content}</p>
+                  <p style={{ color: 'var(--text-primary)', fontSize: 13, margin: 0, whiteSpace: 'pre-wrap' }}>{n.content}</p>
                   <div style={{ color: '#64748b', fontSize: 10, marginTop: 6 }}>{n.author} | {new Date(n.timestamp).toLocaleString()}</div>
                 </div>
               ))}
@@ -448,8 +463,8 @@ export function AgentModusModal({ agent, swarm, layers, onSave, onDelete, onClos
             )}
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
-            <span style={{ color: '#475569', fontSize: 11, alignSelf: 'center' }}>ID: {agent.id.slice(0, 12)}...</span>
-            {dirty && <button onClick={handleSave} style={{ padding: '8px 24px', borderRadius: 8, border: 'none', background: '#00d9ff', color: '#0a1628', fontWeight: 700, cursor: 'pointer', fontSize: 14 }}>Save Changes</button>}
+            <span style={{ color: 'var(--text-secondary)', fontSize: 11, alignSelf: 'center' }}>ID: {agent.id.slice(0, 12)}...</span>
+            {dirty && <button onClick={handleSave} style={{ padding: '8px 24px', borderRadius: 8, border: 'none', background: '#00d9ff', color: 'var(--text-inverse)', fontWeight: 700, cursor: 'pointer', fontSize: 14 }}>Save Changes</button>}
           </div>
         </div>
       </div>
@@ -466,7 +481,7 @@ function InfoCard({ title, value, children }: { title: string; value: string; ch
   return (
     <div style={{ ...card }}>
       <div style={{ color: '#64748b', fontSize: 11, textTransform: 'uppercase', marginBottom: 4 }}>{title}</div>
-      <div style={{ color: '#e2e8f0', fontSize: 15, fontWeight: 600 }}>{value}</div>
+      <div style={{ color: 'var(--text-primary)', fontSize: 15, fontWeight: 600 }}>{value}</div>
       {children}
     </div>
   );
@@ -489,14 +504,14 @@ function RelSection({ title, color, agents, agentConfig, type, onUpdateNote }: {
           <div key={a.id} style={{ ...card, borderLeft: `3px solid ${color}`, marginBottom: 6 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
-                <span style={{ color: '#e2e8f0', fontWeight: 600, fontSize: 14 }}>{a.nickname}</span>
+                <span style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: 14 }}>{a.nickname}</span>
                 <span style={{ color: '#64748b', fontSize: 12, marginLeft: 8 }}>{a.descriptor}</span>
               </div>
-              <span style={{ color: '#475569', fontSize: 10 }}>{a.badges.join(', ')}</span>
+              <span style={{ color: 'var(--text-secondary)', fontSize: 10 }}>{a.badges.join(', ')}</span>
             </div>
             <input value={note} onChange={e => onUpdateNote(noteKey, e.target.value)}
               placeholder={`Why does this agent ${type === 'dependsOn' ? 'depend on' : type === 'feedsInto' ? 'feed into' : type === 'collaboratesWith' ? 'collaborate with' : type === 'canOverride' ? 'override' : 'relate to'} ${a.nickname}?`}
-              style={{ ...inp, marginTop: 6, fontSize: 12, color: '#94a3b8' }} />
+              style={{ ...inp, marginTop: 6, fontSize: 12, color: 'var(--text-secondary)' }} />
           </div>
         );
       })}

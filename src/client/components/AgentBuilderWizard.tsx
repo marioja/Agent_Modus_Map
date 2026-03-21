@@ -271,7 +271,7 @@ const TASK_PATTERNS: Array<{ keywords: string[]; suggestions: TaskSuggestions }>
   },
 ];
 
-function analyzeCoreTas(coreTask: string): TaskSuggestions | null {
+function analyzeCoreTask(coreTask: string): TaskSuggestions | null {
   if (!coreTask || coreTask.trim().length < 10) return null;
   const lower = coreTask.toLowerCase();
 
@@ -366,7 +366,7 @@ export function AgentBuilderWizard({ layers, existingNicknames, onCreate, onCanc
   const [futureEnhancements, setFutureEnhancements] = useState('');
 
   // Smart suggestions based on core task
-  const suggestions = useMemo(() => analyzeCoreTas(coreTask), [coreTask]);
+  const suggestions = useMemo(() => analyzeCoreTask(coreTask), [coreTask]);
 
   function toggleBadge(b: Badge) { setBadges(prev => prev.includes(b) ? prev.filter(x => x !== b) : [...prev, b]); }
 
