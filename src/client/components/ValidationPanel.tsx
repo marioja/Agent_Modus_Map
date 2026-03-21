@@ -18,7 +18,7 @@ export function validateSwarm(swarm: Swarm): ValidationMessage[] {
   const messages: ValidationMessage[] = [];
   const agentById = new Map(swarm.agents.map(a => [a.id, a]));
 
-  // Rule 1: Orphan agents (no relationships at all)
+  // Rule 1: Disconnected agents
   for (const agent of swarm.agents) {
     const hasRel = swarm.relationships.some(
       r => r.sourceAgentId === agent.id || r.targetAgentId === agent.id
@@ -26,36 +26,36 @@ export function validateSwarm(swarm: Swarm): ValidationMessage[] {
     if (!hasRel) {
       messages.push({
         severity: 'warning',
-        message: `${agent.nickname} has no relationships. It is disconnected from the swarm and will not interact with other agents.`,
+        message: `"${agent.nickname}" isn't connected to anything. It won't receive work from other agents or pass results along. Connect it to at least one other agent to make it part of the workflow.`,
         affectedAgents: [agent.nickname],
         rule: 'no_orphan_agents',
       });
     }
   }
 
-  // Rule 2: CRITICAL agents without monitoring connection
-  const monitoringAgents = new Set(
+  // Rule 2: Important agents with no safety net
+  const watcherAgents = new Set(
     swarm.agents
       .filter(a => a.badges.includes('ALWAYS_ON') || a.formalName.toLowerCase().includes('monitor'))
       .map(a => a.id)
   );
   for (const agent of swarm.agents) {
     if (!agent.badges.includes('CRITICAL')) continue;
-    const connectedToMonitor = swarm.relationships.some(r =>
-      (r.sourceAgentId === agent.id && monitoringAgents.has(r.targetAgentId)) ||
-      (r.targetAgentId === agent.id && monitoringAgents.has(r.sourceAgentId))
+    const connectedToWatcher = swarm.relationships.some(r =>
+      (r.sourceAgentId === agent.id && watcherAgents.has(r.targetAgentId)) ||
+      (r.targetAgentId === agent.id && watcherAgents.has(r.sourceAgentId))
     );
-    if (!connectedToMonitor) {
+    if (!connectedToWatcher) {
       messages.push({
         severity: 'advisory',
-        message: `${agent.nickname} is marked CRITICAL but has no connection to a monitoring agent. Consider adding monitoring for early failure detection.`,
+        message: `"${agent.nickname}" is important to your workflow, but nothing is watching it for problems. If it stops working, you won't know until something downstream breaks. Consider adding a check-in point.`,
         affectedAgents: [agent.nickname],
         rule: 'critical_needs_monitoring',
       });
     }
   }
 
-  // Rule 3: HUB agents should have a backup or fallback
+  // Rule 3: Too many agents relying on one
   for (const agent of swarm.agents) {
     if (!agent.badges.includes('HUB')) continue;
     const dependents = swarm.relationships.filter(
@@ -64,28 +64,28 @@ export function validateSwarm(swarm: Swarm): ValidationMessage[] {
     if (dependents.length >= 5) {
       messages.push({
         severity: 'warning',
-        message: `${agent.nickname} is a HUB with ${dependents.length} agents depending on it. If it goes down, those agents are all affected. Consider adding a backup.`,
+        message: `${dependents.length} agents rely on "${agent.nickname}" to do their work. If "${agent.nickname}" has a problem, all of them stop too. You might want a backup plan or a way to split the load.`,
         affectedAgents: [agent.nickname],
         rule: 'hub_needs_backup',
       });
     }
   }
 
-  // Rule 4: canOverride without HUMAN or CAN_OVERRIDE badge
+  // Rule 4: Override permission without the right label
   for (const rel of swarm.relationships) {
     if (rel.type !== 'canOverride') continue;
     const source = agentById.get(rel.sourceAgentId);
     if (source && !source.badges.includes('CAN_OVERRIDE') && !source.badges.includes('HUMAN')) {
       messages.push({
         severity: 'warning',
-        message: `${source.nickname} has override authority but is not marked CAN_OVERRIDE or HUMAN. Override agents should have explicit override badges for clarity.`,
+        message: `"${source.nickname}" can override other agents' decisions, but it isn't labeled as having that authority. Add the CAN_OVERRIDE or HUMAN badge so it's clear who has override power.`,
         affectedAgents: [source.nickname],
         rule: 'override_needs_badge',
       });
     }
   }
 
-  // Rule 5: ENTRY agent without downstream connections
+  // Rule 5: Starting point that goes nowhere
   for (const agent of swarm.agents) {
     if (!agent.badges.includes('ENTRY')) continue;
     const feedsOrDeps = swarm.relationships.some(
@@ -94,14 +94,14 @@ export function validateSwarm(swarm: Swarm): ValidationMessage[] {
     if (!feedsOrDeps) {
       messages.push({
         severity: 'error',
-        message: `${agent.nickname} is an ENTRY point but does not feed into or collaborate with any other agent. It is a dead end.`,
+        message: `"${agent.nickname}" is where work enters the system, but it doesn't pass anything to other agents. Work comes in and goes nowhere. Connect it to the next step in your workflow.`,
         affectedAgents: [agent.nickname],
         rule: 'entry_needs_downstream',
       });
     }
   }
 
-  // Rule 6: Single points of failure (high in-degree on dependsOn)
+  // Rule 6: Bottleneck risk
   for (const agent of swarm.agents) {
     const dependentCount = swarm.relationships.filter(
       r => r.targetAgentId === agent.id && r.type === 'dependsOn'
@@ -109,7 +109,7 @@ export function validateSwarm(swarm: Swarm): ValidationMessage[] {
     if (dependentCount >= 8) {
       messages.push({
         severity: 'warning',
-        message: `${agent.nickname} has ${dependentCount} agents depending on it. This is a significant single point of failure. Consider distributing responsibilities or adding redundancy.`,
+        message: `"${agent.nickname}" is a bottleneck. ${dependentCount} other agents can't work without it. If it slows down or breaks, your whole workflow backs up. Consider splitting its responsibilities across two agents.`,
         affectedAgents: [agent.nickname],
         rule: 'single_point_of_failure',
       });
