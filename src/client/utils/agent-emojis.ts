@@ -42,6 +42,10 @@ const NICKNAME_EMOJIS: Record<string, string> = {
   Security: '🛡️', Scorer: '⭐', Checklist: '✅', Gate: '🚧',
   Anomaly: '⚠️', Boost: '🚀', Captain: '🧑‍✈️', Atlas: '🗺️',
   Assign: '📋', Scribble: '📝',
+  // Lead Gen / Consulting
+  Scout: '🔭', Profile: '📇', Signal: '📡', Craft: '✉️', Sequence: '📬',
+  Social: '💼', Warm: '☕', Qualify: '🎯', Discover: '❓', Propose: '📑',
+  Price: '💰', Funnel: '📊', Compete: '⚔️',
 };
 
 export function getAgentEmoji(nickname: string, formalName: string, configEmoji?: string): string {

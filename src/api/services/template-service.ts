@@ -344,6 +344,64 @@ const templates: SwarmTemplate[] = [
       ['Feedback', 'HRDash', 'feedsInto'],
     ].map(([s, t, type]) => ({ sourceNickname: s as string, targetNickname: t as string, type: type as any })),
   },
+  {
+    id: 'lead-gen-consulting-v1',
+    name: 'Consulting Lead Gen',
+    domain: 'Sales',
+    description: '14-agent swarm for finding consulting clients: prospect identification, outreach, qualification, proposal generation, and pipeline management.',
+    agentCount: 14,
+    layerCount: 4,
+    tags: ['lead-gen', 'consulting', 'sales', 'outreach', 'pipeline', 'prospecting'],
+    layers: [
+      { name: 'Discovery & Research', colorTheme: '#00d9ff', order: 1 },
+      { name: 'Outreach & Engagement', colorTheme: '#a855f7', order: 2 },
+      { name: 'Qualification & Proposal', colorTheme: '#22c55e', order: 3 },
+      { name: 'Pipeline & Intelligence', colorTheme: '#fbbf24', order: 4 },
+    ],
+    agents: [
+      // Discovery & Research
+      { nickname: 'Scout', formalName: 'Research-Prospect-Identify', descriptor: 'The Opportunity Finder', layerIndex: 0, badges: ['ENTRY', 'AUTO', 'ALWAYS_ON'], positionIndex: 0 },
+      { nickname: 'Profile', formalName: 'Research-Company-Enrich', descriptor: 'The Deep Diver', layerIndex: 0, badges: ['AUTO'], positionIndex: 1 },
+      { nickname: 'Signal', formalName: 'Research-Intent-Detect', descriptor: 'The Radar', layerIndex: 0, badges: ['AUTO', 'HIGH_PRIORITY'], positionIndex: 2 },
+      { nickname: 'Compete', formalName: 'Research-Competitor-Watch', descriptor: 'The Rival Watcher', layerIndex: 0, badges: ['AUTO', 'ADVISORY'], positionIndex: 3 },
+      // Outreach & Engagement
+      { nickname: 'Craft', formalName: 'Content-Outreach-Personalize', descriptor: 'The Message Tailor', layerIndex: 1, badges: ['AUTO', 'APPROVAL'], positionIndex: 0 },
+      { nickname: 'Sequence', formalName: 'Workflow-Cadence-Manage', descriptor: 'The Follow-Upper', layerIndex: 1, badges: ['AUTO', 'ALWAYS_ON'], positionIndex: 1 },
+      { nickname: 'Social', formalName: 'Content-LinkedIn-Engage', descriptor: 'The Networker', layerIndex: 1, badges: ['AUTO', 'HUMAN'], positionIndex: 2 },
+      { nickname: 'Warm', formalName: 'Content-Nurture-Drip', descriptor: 'The Relationship Builder', layerIndex: 1, badges: ['AUTO'], positionIndex: 3 },
+      // Qualification & Proposal
+      { nickname: 'Qualify', formalName: 'Workflow-Lead-Score', descriptor: 'The Gatekeeper', layerIndex: 2, badges: ['CRITICAL', 'AUTO'], positionIndex: 0 },
+      { nickname: 'Discover', formalName: 'Workflow-NeedsAnalysis-Run', descriptor: 'The Question Asker', layerIndex: 2, badges: ['HUMAN', 'HIGH_PRIORITY'], positionIndex: 1 },
+      { nickname: 'Propose', formalName: 'Content-Proposal-Generate', descriptor: 'The Deal Maker', layerIndex: 2, badges: ['APPROVAL', 'HIGH_PRIORITY'], positionIndex: 2 },
+      { nickname: 'Price', formalName: 'Workflow-Estimate-Calculate', descriptor: 'The Number Cruncher', layerIndex: 2, badges: ['AUTO', 'CRITICAL'], positionIndex: 3 },
+      // Pipeline & Intelligence
+      { nickname: 'Funnel', formalName: 'Analytics-Pipeline-Track', descriptor: 'The Pipeline Manager', layerIndex: 3, badges: ['HUB', 'ALWAYS_ON', 'LOGS_ALL'], positionIndex: 0 },
+      { nickname: 'Insight', formalName: 'Intelligence-WinLoss-Analyze', descriptor: 'The Pattern Spotter', layerIndex: 3, badges: ['AUTO', 'ADVISORY'], positionIndex: 1 },
+    ],
+    relationships: [
+      // Discovery flow
+      ['Scout', 'Profile', 'feedsInto'], ['Scout', 'Signal', 'feedsInto'],
+      ['Profile', 'Craft', 'feedsInto'], ['Signal', 'Craft', 'feedsInto'],
+      ['Compete', 'Craft', 'feedsInto'], ['Compete', 'Propose', 'feedsInto'],
+      // Outreach flow
+      ['Craft', 'Sequence', 'feedsInto'], ['Craft', 'Social', 'feedsInto'],
+      ['Sequence', 'Warm', 'feedsInto'], ['Social', 'Warm', 'feedsInto'],
+      ['Warm', 'Qualify', 'feedsInto'],
+      // Qualification flow
+      ['Qualify', 'Discover', 'feedsInto'], ['Discover', 'Propose', 'feedsInto'],
+      ['Propose', 'Price', 'dependsOn'], ['Price', 'Propose', 'feedsInto'],
+      // Pipeline
+      ['Qualify', 'Funnel', 'feedsInto'], ['Propose', 'Funnel', 'feedsInto'],
+      ['Funnel', 'Insight', 'feedsInto'], ['Insight', 'Scout', 'feedsInto'],
+      // Collaborations
+      ['Scout', 'Compete', 'collaboratesWith'], ['Profile', 'Signal', 'collaboratesWith'],
+      ['Craft', 'Warm', 'collaboratesWith'], ['Qualify', 'Funnel', 'collaboratesWith'],
+      ['Insight', 'Compete', 'collaboratesWith'], ['Discover', 'Price', 'collaboratesWith'],
+      // Dependencies
+      ['Craft', 'Profile', 'dependsOn'], ['Qualify', 'Profile', 'dependsOn'],
+      ['Propose', 'Discover', 'dependsOn'], ['Social', 'Profile', 'dependsOn'],
+    ].map(([s, t, type]) => ({ sourceNickname: s as string, targetNickname: t as string, type: type as any })),
+  },
 ];
 
 export class TemplateService {
