@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { runSimulation, getSwarmCostEstimate } from '../api.js';
+import { runSimulation, getSwarmCostEstimate, runLiveTest, getSwarmPackage } from '../api.js';
 
 interface Props {
   swarmId: string;
@@ -7,14 +7,17 @@ interface Props {
   onToggle: () => void;
 }
 
-type Tab = 'simulate' | 'cost';
+type Tab = 'simulate' | 'cost' | 'live' | 'deploy';
 
 export function SimulationPanel({ swarmId, isOpen, onToggle }: Props) {
   const [tab, setTab] = useState<Tab>('simulate');
   const [simResult, setSimResult] = useState<any>(null);
   const [costResult, setCostResult] = useState<any>(null);
+  const [liveResult, setLiveResult] = useState<any>(null);
+  const [swarmPackage, setSwarmPackage] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [sampleInput, setSampleInput] = useState('');
+  const [liveInput, setLiveInput] = useState('');
   const [callsPerDay, setCallsPerDay] = useState('');
 
   async function handleRunSimulation() {
@@ -24,6 +27,48 @@ export function SimulationPanel({ swarmId, isOpen, onToggle }: Props) {
       setSimResult(res);
     } catch { setSimResult(null); }
     setLoading(false);
+  }
+
+  async function handleRunLiveTest() {
+    setLoading(true);
+    try {
+      const res = await runLiveTest(swarmId, liveInput || undefined);
+      setLiveResult(res);
+    } catch (err: any) {
+      setLiveResult({ status: 'failed', error: err.message });
+    }
+    setLoading(false);
+  }
+
+  async function handleExportPackage() {
+    setLoading(true);
+    try {
+      const res = await getSwarmPackage(swarmId);
+      setSwarmPackage(res);
+    } catch { setSwarmPackage(null); }
+    setLoading(false);
+  }
+
+  function downloadPackage() {
+    if (!swarmPackage) return;
+    // Download each file as a combined JSON for now
+    const blob = new Blob([JSON.stringify(swarmPackage, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${swarmPackage.name.replace(/[^a-zA-Z0-9]/g, '_')}_package.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function downloadFile(file: { path: string; content: string }) {
+    const blob = new Blob([file.content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = file.path.split('/').pop() || file.path;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
   async function handleGetCost() {
@@ -48,14 +93,14 @@ export function SimulationPanel({ swarmId, isOpen, onToggle }: Props) {
       {/* Header */}
       <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-default)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', gap: 4, background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: 2 }}>
-          {(['simulate', 'cost'] as Tab[]).map(t => (
+          {(['simulate', 'cost', 'live', 'deploy'] as Tab[]).map(t => (
             <button key={t} onClick={() => setTab(t)} style={{
-              padding: '6px 14px', borderRadius: 6, border: 'none', cursor: 'pointer',
-              fontSize: 12, fontWeight: 600, textTransform: 'capitalize',
-              background: tab === t ? 'var(--accent-primary)' : 'transparent',
-              color: tab === t ? 'var(--text-inverse)' : 'var(--text-tertiary)',
+              padding: '6px 10px', borderRadius: 6, border: 'none', cursor: 'pointer',
+              fontSize: 11, fontWeight: 600,
+              background: tab === t ? (t === 'live' ? '#ef4444' : t === 'deploy' ? '#22c55e' : 'var(--accent-primary)') : 'transparent',
+              color: tab === t ? '#fff' : 'var(--text-tertiary)',
               fontFamily: 'var(--font-primary)',
-            }}>{t === 'simulate' ? 'Mock Run' : 'Cost Estimate'}</button>
+            }}>{t === 'simulate' ? 'Mock' : t === 'cost' ? 'Cost' : t === 'live' ? 'Live Test' : 'Deploy'}</button>
           ))}
         </div>
         <button onClick={onToggle} style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer', fontSize: 18 }}>{'\u00D7'}</button>
@@ -131,6 +176,99 @@ export function SimulationPanel({ swarmId, isOpen, onToggle }: Props) {
                     </div>
                   ))}
                 </>}
+              </div>
+            )}
+          </div>
+        )}
+
+        {tab === 'live' && (
+          <div>
+            <div style={{
+              padding: '10px 14px', borderRadius: 8, marginBottom: 12,
+              background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)',
+              fontSize: 11, color: '#f87171', lineHeight: 1.5,
+            }}>
+              This makes real API calls and costs real money. Each agent in the swarm will call the configured LLM model. Review the Cost Estimate tab first.
+            </div>
+
+            <div style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Input for Live Test</div>
+            <textarea
+              value={liveInput}
+              onChange={e => setLiveInput(e.target.value)}
+              placeholder="Enter a real request to send through the swarm..."
+              style={{
+                width: '100%', minHeight: 60, padding: '8px 12px', borderRadius: 8,
+                border: '1px solid var(--border-default)', background: 'var(--bg-surface)',
+                color: 'var(--text-primary)', fontSize: 13, fontFamily: 'var(--font-primary)',
+                resize: 'vertical', outline: 'none',
+              }}
+            />
+            <button onClick={handleRunLiveTest} disabled={loading} style={{
+              marginTop: 8, padding: '8px 20px', borderRadius: 8, border: 'none',
+              background: '#ef4444', color: '#fff',
+              fontWeight: 600, cursor: loading ? 'default' : 'pointer', fontSize: 13,
+              fontFamily: 'var(--font-primary)', opacity: loading ? 0.5 : 1,
+            }}>{loading ? 'Executing...' : 'Run Live Test'}</button>
+
+            {liveResult && liveResult.status === 'failed' && !liveResult.steps && (
+              <div style={{ marginTop: 12, padding: '10px 14px', borderRadius: 8, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', fontSize: 12, color: '#f87171' }}>
+                Error: {liveResult.error}
+              </div>
+            )}
+
+            {liveResult && liveResult.steps && (
+              <div style={{ marginTop: 16 }}>
+                <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
+                  <Stat label="Agents" value={`${liveResult.agentsProcessed}/${liveResult.agentsTotal}`} />
+                  <Stat label="Duration" value={`${(liveResult.totalDurationMs / 1000).toFixed(1)}s`} />
+                  <Stat label="Total Cost" value={`$${liveResult.totalCost}`} />
+                  <Stat label="Tokens" value={`${(liveResult.totalInputTokens + liveResult.totalOutputTokens).toLocaleString()}`} />
+                </div>
+
+                <div style={{
+                  padding: '6px 10px', borderRadius: 6, marginBottom: 12, fontSize: 11, fontWeight: 600,
+                  background: liveResult.status === 'completed' ? 'rgba(34,197,94,0.1)' : liveResult.status === 'partial' ? 'rgba(251,191,36,0.1)' : 'rgba(239,68,68,0.1)',
+                  color: liveResult.status === 'completed' ? '#22c55e' : liveResult.status === 'partial' ? '#fbbf24' : '#ef4444',
+                  border: `1px solid ${liveResult.status === 'completed' ? 'rgba(34,197,94,0.2)' : liveResult.status === 'partial' ? 'rgba(251,191,36,0.2)' : 'rgba(239,68,68,0.2)'}`,
+                }}>
+                  Status: {liveResult.status.toUpperCase()}
+                </div>
+
+                <div style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Agent Responses</div>
+                {liveResult.steps.map((step: any, i: number) => (
+                  <div key={i} style={{
+                    padding: '10px 14px', marginBottom: 8, borderRadius: 8,
+                    background: 'var(--bg-surface)',
+                    borderLeft: `3px solid ${step.status === 'success' ? '#22c55e' : '#ef4444'}`,
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                      <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: 13 }}>
+                        {step.order + 1}. {step.nickname}
+                      </span>
+                      <div style={{ display: 'flex', gap: 8, fontSize: 10, color: 'var(--text-tertiary)' }}>
+                        <span>{step.model}</span>
+                        <span>{step.durationMs}ms</span>
+                        <span>${step.cost}</span>
+                      </div>
+                    </div>
+                    {step.status === 'error' ? (
+                      <div style={{ fontSize: 12, color: '#f87171' }}>Error: {step.error}</div>
+                    ) : (
+                      <div style={{
+                        fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.6,
+                        maxHeight: 150, overflowY: 'auto', whiteSpace: 'pre-wrap',
+                        padding: '8px 10px', borderRadius: 6, background: 'var(--bg-elevated)',
+                      }}>
+                        {step.output}
+                      </div>
+                    )}
+                    {step.downstreamAgents.length > 0 && (
+                      <div style={{ fontSize: 10, color: 'var(--text-tertiary)', marginTop: 4 }}>
+                        Passes to: {step.downstreamAgents.join(', ')}
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -212,6 +350,70 @@ export function SimulationPanel({ swarmId, isOpen, onToggle }: Props) {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {tab === 'deploy' && (
+          <div>
+            <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16, lineHeight: 1.6 }}>
+              Export your swarm as a standalone deployable package with agent prompts, configuration, and a runner script.
+            </div>
+
+            <button onClick={handleExportPackage} disabled={loading} style={{
+              padding: '10px 24px', borderRadius: 8, border: 'none',
+              background: '#22c55e', color: '#fff',
+              fontWeight: 600, cursor: loading ? 'default' : 'pointer', fontSize: 13,
+              fontFamily: 'var(--font-primary)', opacity: loading ? 0.5 : 1,
+              width: '100%',
+            }}>{loading ? 'Generating...' : 'Generate Deploy Package'}</button>
+
+            {swarmPackage && (
+              <div style={{ marginTop: 16 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                  <div style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                    Package: {swarmPackage.name}
+                  </div>
+                  <button onClick={downloadPackage} style={{
+                    padding: '4px 12px', borderRadius: 6, border: '1px solid var(--border-default)',
+                    background: 'transparent', color: 'var(--accent-primary)',
+                    fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-primary)',
+                  }}>Download All</button>
+                </div>
+
+                <div style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Files ({swarmPackage.files.length})</div>
+                {swarmPackage.files.map((file: any, i: number) => (
+                  <div key={i} style={{
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    padding: '8px 12px', marginBottom: 4, borderRadius: 6,
+                    background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)',
+                  }}>
+                    <div>
+                      <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-primary)' }}>{file.path}</div>
+                      <div style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>{file.content.length} chars</div>
+                    </div>
+                    <button onClick={() => downloadFile(file)} style={{
+                      padding: '2px 8px', borderRadius: 4, border: '1px solid var(--border-default)',
+                      background: 'transparent', color: 'var(--text-secondary)',
+                      fontSize: 10, cursor: 'pointer', fontFamily: 'var(--font-primary)',
+                    }}>Save</button>
+                  </div>
+                ))}
+
+                <div style={{
+                  marginTop: 16, padding: '12px 14px', borderRadius: 8,
+                  background: 'var(--bg-surface)', border: '1px solid var(--border-default)',
+                  fontSize: 11, color: 'var(--text-secondary)', lineHeight: 1.6,
+                }}>
+                  <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: 4 }}>Quick Start</div>
+                  <code style={{ display: 'block', padding: '8px', borderRadius: 4, background: 'var(--bg-elevated)', fontSize: 11, color: 'var(--accent-primary)' }}>
+                    npm install{'\n'}
+                    cp .env.example .env{'\n'}
+                    # Add your ANTHROPIC_API_KEY to .env{'\n'}
+                    npm start -- "Your input here"
+                  </code>
+                </div>
               </div>
             )}
           </div>

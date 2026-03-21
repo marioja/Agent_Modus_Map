@@ -437,6 +437,16 @@ export async function getSwarmCostEstimate(swarmId: string, callsPerDay?: number
   return fetchJson(`/simulate/${swarmId}/cost${params}`);
 }
 
+// Swarm Package Export
+export async function getSwarmPackage(swarmId: string): Promise<any> {
+  return fetchJson(`/simulate/${swarmId}/export`);
+}
+
+// Live Test Execution
+export async function runLiveTest(swarmId: string, input?: string): Promise<any> {
+  return postJson(`/simulate/${swarmId}/live`, { input });
+}
+
 // Health check with LLM status
 export async function getApiHealth(): Promise<{ status: string; llmAvailable: boolean }> {
   return fetchJson('/health');
