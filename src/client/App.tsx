@@ -256,7 +256,7 @@ export function App() {
   // Loading state
   if (loading || !swarm) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', color: '#00d9ff', fontSize: 20 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', color: '#d4722a', fontSize: 20 }}>
         Loading swarm...
       </div>
     );
@@ -265,7 +265,7 @@ export function App() {
   // Editor view
   return (
     <ReactFlowProvider>
-      <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
         <EditorToolbar
           swarmName={swarm.name}
           agentCount={swarm.agents.length}

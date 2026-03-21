@@ -18,10 +18,10 @@ import type { Swarm, Agent, BlastRadiusResult, RelationshipType } from '../../sh
 const nodeTypes = { agent: AgentNode };
 
 const edgeStyles: Record<string, { stroke: string; strokeDasharray?: string; strokeWidth: number }> = {
-  dependsOn: { stroke: '#00d9ff', strokeWidth: 2 },
+  dependsOn: { stroke: '#d4722a', strokeWidth: 2 },
   feedsInto: { stroke: '#7c3aed', strokeDasharray: '8,4', strokeWidth: 2 },
-  collaboratesWith: { stroke: '#fbbf24', strokeDasharray: '3,3', strokeWidth: 1.5 },
-  canOverride: { stroke: '#ef4444', strokeWidth: 3 },
+  collaboratesWith: { stroke: '#e09050', strokeDasharray: '3,3', strokeWidth: 1.5 },
+  canOverride: { stroke: '#8A2E3B', strokeWidth: 3 },
 };
 
 interface SwarmCanvasProps {
@@ -38,7 +38,7 @@ interface SwarmCanvasProps {
 
 function getLayerColor(layerId: string, layers: Swarm['layers']): string {
   const layer = layers.find(l => l.id === layerId);
-  return layer?.colorTheme || '#8b9dc3';
+  return layer?.colorTheme || '#b5adb9';
 }
 
 export function SwarmCanvas({
@@ -197,23 +197,23 @@ export function SwarmCanvas({
         snapGrid={[20, 20]}
         proOptions={{ hideAttribution: true }}
         style={{ background: 'transparent' }}
-        connectionLineStyle={{ stroke: '#00d9ff', strokeWidth: 2 }}
+        connectionLineStyle={{ stroke: '#d4722a', strokeWidth: 2 }}
       >
-        <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="rgba(0, 217, 255, 0.06)" />
+        <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="rgba(212, 114, 42, 0.06)" />
         <Controls
           position="bottom-left"
-          style={{ background: '#1e293b', border: '1px solid rgba(0, 217, 255, 0.3)', borderRadius: 10 }}
+          style={{ background: '#271d2e', border: '1px solid rgba(212, 114, 42, 0.3)', borderRadius: 10 }}
         />
         <MiniMap
           position="bottom-right"
           style={{
-            background: '#0f172a',
-            border: '1px solid rgba(0, 217, 255, 0.2)',
+            background: '#1e1524',
+            border: '1px solid rgba(212, 114, 42, 0.2)',
             borderRadius: 10,
           }}
           nodeColor={(node) => {
             const data = node.data as unknown as AgentNodeData;
-            return data?.layerColor || '#8b9dc3';
+            return data?.layerColor || '#b5adb9';
           }}
           maskColor="rgba(10, 14, 39, 0.8)"
         />

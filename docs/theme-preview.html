@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agent Modus - Theme Preview v2</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --font: 'Outfit', sans-serif;
+
+    /* Plum - Brand Identity (warm, earthy purple) */
+    --purple-900: #1f0e28;
+    --purple-800: #3a1a4a;
+    --purple-700: #5c2d6e;
+    --purple-600: #7a3d8f;
+    --purple-500: #9254a8;
+    --purple-400: #b07cc4;
+    --purple-300: #cba4d9;
+    --purple-glow: rgba(146, 84, 168, 0.15);
+
+    /* Warm Plum (red-shifted purple, AAA compliant) */
+    --gray-950: #140e18;
+    --gray-900: #1e1524;
+    --gray-850: #271d2e;
+    --gray-800: #312639;
+    --gray-700: #423449;
+    --gray-600: #5a4a62;
+    --gray-500: #76677e;
+    --gray-400: #968a9c;
+    --gray-300: #b5adb9;
+    --gray-200: #d8d3db;
+    --gray-100: #eeebed;
+
+    /* Toasted Pumpkin - Primary Action */
+    --orange-700: #9a3412;
+    --orange-600: #b45216;
+    --orange-500: #c8611a;
+    --orange-400: #d4722a;
+    --orange-300: #e09050;
+    --orange-200: #edb882;
+    --orange-glow: rgba(212, 114, 42, 0.15);
+
+    /* Sage - Earthy Green Accent */
+    --aqua-600: #3d6b4f;
+    --aqua-500: #4d8b62;
+    --aqua-400: #5fa878;
+    --aqua-300: #88c49e;
+    --aqua-glow: rgba(95, 168, 120, 0.12);
+
+    /* Oxblood - Alerts Only */
+    --oxblood-700: #6B1D2A;
+    --oxblood-500: #8A2E3B;
+    --oxblood-400: #A3404F;
+    --oxblood-glow: rgba(107, 29, 42, 0.25);
+
+    /* Status */
+    --status-ok: #34d399;
+    --status-warn: var(--orange-400);
+    --status-error: var(--oxblood-500);
+  }
+
+  body {
+    font-family: var(--font);
+    background: var(--gray-950);
+    color: var(--gray-200);
+    padding: 40px;
+    min-height: 100vh;
+  }
+
+  .container { max-width: 1000px; margin: 0 auto; }
+
+  /* Header */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--gray-800);
+    margin-bottom: 40px;
+  }
+  .brand { display: flex; align-items: center; gap: 14px; }
+  .brand-icon {
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--aqua-500), var(--purple-600));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px; font-weight: 800; color: white;
+  }
+  .brand-text {
+    font-size: 38px; font-weight: 800;
+    letter-spacing: -0.03em; line-height: 1;
+  }
+  .brand-text .agent { color: var(--aqua-400); }
+  .brand-text .modus { color: var(--purple-400); }
+
+  .theme-badge {
+    font-size: 13px; font-weight: 600;
+    padding: 6px 16px; border-radius: 999px;
+    border: 1px solid var(--gray-700);
+    color: var(--gray-300); background: var(--gray-900);
+  }
+
+  /* Hero */
+  .hero h1 {
+    font-size: 44px; font-weight: 800;
+    color: var(--gray-100); margin-bottom: 12px;
+  }
+  .hero p {
+    font-size: 18px; color: var(--gray-400);
+    margin-bottom: 36px; line-height: 1.5;
+  }
+
+  /* Cards Row */
+  .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 48px; }
+  .card {
+    background: var(--gray-900);
+    border: 1px solid var(--gray-800);
+    border-radius: 14px;
+    padding: 28px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .card:hover {
+    border-color: var(--orange-400);
+    background: var(--gray-850);
+    box-shadow: 0 0 24px var(--orange-glow);
+  }
+  .card-icon { font-size: 28px; margin-bottom: 16px; color: var(--orange-400); }
+  .card h3 { font-size: 17px; font-weight: 700; color: var(--gray-100); margin-bottom: 6px; }
+  .card p { font-size: 14px; color: var(--gray-500); }
+
+  /* Section Label */
+  .section-label {
+    font-size: 11px; font-weight: 600;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--purple-400); margin-bottom: 16px;
+  }
+
+  /* Swarm Rows */
+  .swarm-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 48px; }
+  .swarm-row {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--gray-900);
+    border: 1px solid var(--gray-800);
+    border-radius: 12px;
+    padding: 18px 24px;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .swarm-row:hover { border-color: var(--gray-700); background: var(--gray-850); }
+  .swarm-name { font-size: 16px; font-weight: 600; color: var(--gray-100); }
+  .swarm-meta { display: flex; gap: 8px; align-items: center; }
+
+  .badge {
+    font-size: 12px; font-weight: 500;
+    padding: 4px 10px; border-radius: 6px;
+    background: var(--gray-800); color: var(--gray-300);
+    border: 1px solid var(--gray-700);
+  }
+  .badge.purple {
+    background: var(--purple-glow); color: var(--purple-300);
+    border-color: rgba(124, 58, 237, 0.25);
+  }
+  .badge.orange {
+    background: var(--orange-glow); color: var(--orange-300);
+    border-color: rgba(249, 115, 22, 0.25);
+  }
+  .badge.aqua {
+    background: var(--aqua-glow); color: var(--aqua-300);
+    border-color: rgba(6, 182, 212, 0.25);
+  }
+  .badge.oxblood {
+    background: var(--oxblood-glow); color: var(--oxblood-400);
+    border-color: rgba(107, 29, 42, 0.3);
+  }
+
+  .health-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--status-ok); }
+  .health-dot.warn { background: var(--status-warn); }
+  .health-dot.error { background: var(--status-error); }
+
+  /* Buttons */
+  .buttons { display: flex; gap: 12px; margin-bottom: 48px; flex-wrap: wrap; }
+  .btn {
+    font-family: var(--font); font-size: 14px; font-weight: 600;
+    padding: 10px 22px; border-radius: 10px;
+    cursor: pointer; border: none; transition: all 0.15s;
+  }
+  .btn-primary { background: var(--orange-500); color: white; }
+  .btn-primary:hover { background: var(--orange-400); box-shadow: 0 0 16px var(--orange-glow); }
+  .btn-brand { background: var(--purple-600); color: white; }
+  .btn-brand:hover { background: var(--purple-500); }
+  .btn-secondary {
+    background: transparent; color: var(--gray-200);
+    border: 1px solid var(--gray-700);
+  }
+  .btn-secondary:hover { border-color: var(--gray-500); }
+  .btn-danger {
+    background: transparent; color: var(--oxblood-400);
+    border: 1px solid var(--oxblood-700);
+  }
+  .btn-danger:hover { background: var(--oxblood-glow); }
+  .btn-ghost { background: transparent; color: var(--gray-400); }
+  .btn-ghost:hover { color: var(--gray-200); }
+  .btn-aqua {
+    background: transparent; color: var(--aqua-400);
+    border: 1px solid rgba(6, 182, 212, 0.3);
+  }
+  .btn-aqua:hover { background: var(--aqua-glow); }
+
+  /* Agent Cards */
+  .agent-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 48px; }
+  .agent-card {
+    background: var(--gray-900);
+    border: 1px solid var(--gray-800);
+    border-radius: 12px;
+    padding: 20px;
+    border-left: 3px solid var(--purple-600);
+  }
+  .agent-card.active { border-left-color: var(--orange-400); }
+  .agent-card.critical { border-left-color: var(--oxblood-500); }
+  .agent-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .agent-emoji { font-size: 28px; }
+  .agent-name { font-size: 15px; font-weight: 700; color: var(--gray-100); }
+  .agent-role { font-size: 12px; color: var(--gray-500); margin-top: 2px; }
+  .agent-badges { display: flex; gap: 6px; flex-wrap: wrap; }
+
+  /* Inputs */
+  .form-group { margin-bottom: 48px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 12px; }
+  .field label { display: block; font-size: 13px; font-weight: 500; color: var(--gray-400); margin-bottom: 6px; }
+  .field input, .field select, .field textarea {
+    font-family: var(--font); font-size: 14px; width: 100%;
+    padding: 10px 14px; background: var(--gray-850);
+    border: 1px solid var(--gray-700); border-radius: 8px;
+    color: var(--gray-200); outline: none; transition: border-color 0.15s;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus {
+    border-color: var(--orange-400);
+    box-shadow: 0 0 0 3px var(--orange-glow);
+  }
+  .field textarea { min-height: 80px; resize: vertical; }
+
+  /* Swatches */
+  .swatches { display: flex; gap: 24px; margin-bottom: 48px; flex-wrap: wrap; }
+  .swatch-group h4 { font-size: 12px; font-weight: 600; color: var(--gray-400); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.1em; }
+  .swatch-row { display: flex; gap: 6px; }
+  .swatch {
+    width: 44px; height: 44px; border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.06); position: relative;
+  }
+  .swatch span { position: absolute; bottom: -18px; left: 0; font-size: 9px; color: var(--gray-500); white-space: nowrap; }
+
+  /* Alerts */
+  .alert {
+    padding: 14px 18px; border-radius: 10px; font-size: 14px;
+    margin-bottom: 12px; display: flex; align-items: center; gap: 10px;
+  }
+  .alert-purple { background: var(--purple-glow); border: 1px solid rgba(124, 58, 237, 0.25); color: var(--purple-300); }
+  .alert-orange { background: var(--orange-glow); border: 1px solid rgba(249, 115, 22, 0.2); color: var(--orange-300); }
+  .alert-aqua { background: var(--aqua-glow); border: 1px solid rgba(6, 182, 212, 0.2); color: var(--aqua-300); }
+  .alert-oxblood { background: var(--oxblood-glow); border: 1px solid rgba(107, 29, 42, 0.3); color: var(--oxblood-400); }
+
+  /* Toolbar preview */
+  .toolbar {
+    display: flex; gap: 6px; align-items: center;
+    background: var(--gray-900); border: 1px solid var(--gray-800);
+    border-radius: 10px; padding: 8px 12px; margin-bottom: 48px;
+  }
+  .toolbar-btn {
+    font-family: var(--font); font-size: 12px; font-weight: 600;
+    padding: 6px 14px; border-radius: 6px; cursor: pointer; border: none;
+    background: transparent; color: var(--gray-400); transition: all 0.15s;
+  }
+  .toolbar-btn.active { background: var(--purple-600); color: white; }
+  .toolbar-btn:hover:not(.active) { color: var(--gray-200); background: var(--gray-800); }
+  .toolbar-sep { width: 1px; height: 20px; background: var(--gray-700); margin: 0 4px; }
+  .toolbar-action {
+    font-family: var(--font); font-size: 12px; font-weight: 600;
+    padding: 6px 14px; border-radius: 6px; cursor: pointer;
+    border: 1px solid rgba(249, 115, 22, 0.3);
+    background: transparent; color: var(--orange-400); transition: all 0.15s;
+  }
+  .toolbar-action:hover { background: var(--orange-glow); }
+
+  /* Stat cards */
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 48px; }
+  .stat-card {
+    background: var(--gray-900); border: 1px solid var(--gray-800);
+    border-radius: 10px; padding: 18px; text-align: center;
+  }
+  .stat-value { font-size: 28px; font-weight: 800; margin-bottom: 4px; }
+  .stat-label { font-size: 12px; color: var(--gray-500); }
+
+  hr { border: none; height: 1px; background: var(--gray-800); margin: 48px 0; }
+
+  /* Link style */
+  a { color: var(--aqua-400); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="brand">
+      <div class="brand-icon">A</div>
+      <div class="brand-text">
+        <span class="agent">Agent</span><span class="modus">Modus</span>
+      </div>
+    </div>
+    <div class="theme-badge">Purple + Orange + Aqua</div>
+  </div>
+
+  <!-- Hero -->
+  <div class="hero">
+    <h1>Design your agent swarm</h1>
+    <p>Build, connect, and monitor multi-agent AI systems. Start from scratch, use a template, or import your existing agents.</p>
+  </div>
+
+  <!-- Action Cards -->
+  <div class="cards">
+    <div class="card">
+      <div class="card-icon">+</div>
+      <h3>Start from Scratch</h3>
+      <p>Blank canvas with default layers</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">&#9638;</div>
+      <h3>Use a Template</h3>
+      <p>8 industry templates</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">&#8593;</div>
+      <h3>Import CSV</h3>
+      <p>Upload a spreadsheet of agents</p>
+    </div>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="section-label">Editor Toolbar</div>
+  <div class="toolbar">
+    <button class="toolbar-btn active">Design</button>
+    <button class="toolbar-btn">Monitor</button>
+    <button class="toolbar-btn">Analyze</button>
+    <div class="toolbar-sep"></div>
+    <button class="toolbar-action">+ Agent</button>
+    <button class="toolbar-btn">Relationships</button>
+    <button class="toolbar-btn">Validate</button>
+  </div>
+
+  <!-- Stats -->
+  <div class="section-label">Dashboard Stats</div>
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-value" style="color: var(--orange-400)">12</div>
+      <div class="stat-label">Active Agents</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" style="color: var(--purple-400)">8</div>
+      <div class="stat-label">Relationships</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" style="color: var(--aqua-400)">3</div>
+      <div class="stat-label">Layers</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" style="color: var(--status-ok)">98%</div>
+      <div class="stat-label">Health Score</div>
+    </div>
+  </div>
+
+  <!-- Swarm List -->
+  <div class="section-label">Your Swarms</div>
+  <div class="swarm-list">
+    <div class="swarm-row">
+      <div class="swarm-name">Customer Service Swarm</div>
+      <div class="swarm-meta">
+        <span class="badge orange">6 agents</span>
+        <span class="badge">4 rel</span>
+        <span class="badge aqua">3 layers</span>
+        <div class="health-dot"></div>
+      </div>
+    </div>
+    <div class="swarm-row">
+      <div class="swarm-name">DevOps Pipeline</div>
+      <div class="swarm-meta">
+        <span class="badge orange">4 agents</span>
+        <span class="badge">2 rel</span>
+        <span class="badge aqua">4 layers</span>
+        <div class="health-dot warn"></div>
+      </div>
+    </div>
+    <div class="swarm-row">
+      <div class="swarm-name">Security SOC</div>
+      <div class="swarm-meta">
+        <span class="badge orange">8 agents</span>
+        <span class="badge">5 rel</span>
+        <span class="badge aqua">3 layers</span>
+        <div class="health-dot error"></div>
+      </div>
+    </div>
+  </div>
+
+  <hr>
+
+  <!-- Color Palette -->
+  <div class="section-label">Color Palette</div>
+  <div class="swatches">
+    <div class="swatch-group">
+      <h4>Warm Plum</h4>
+      <div class="swatch-row">
+        <div class="swatch" style="background:#140e18"><span>950</span></div>
+        <div class="swatch" style="background:#1e1524"><span>900</span></div>
+        <div class="swatch" style="background:#271d2e"><span>850</span></div>
+        <div class="swatch" style="background:#312639"><span>800</span></div>
+        <div class="swatch" style="background:#423449"><span>700</span></div>
+        <div class="swatch" style="background:#76677e"><span>500</span></div>
+        <div class="swatch" style="background:#b5adb9"><span>300</span></div>
+        <div class="swatch" style="background:#d8d3db"><span>200</span></div>
+      </div>
+    </div>
+    <div class="swatch-group">
+      <h4>Plum (brand)</h4>
+      <div class="swatch-row">
+        <div class="swatch" style="background:#1f0e28"><span>900</span></div>
+        <div class="swatch" style="background:#5c2d6e"><span>700</span></div>
+        <div class="swatch" style="background:#7a3d8f"><span>600</span></div>
+        <div class="swatch" style="background:#9254a8"><span>500</span></div>
+        <div class="swatch" style="background:#b07cc4"><span>400</span></div>
+        <div class="swatch" style="background:#cba4d9"><span>300</span></div>
+      </div>
+    </div>
+    <div class="swatch-group">
+      <h4>Toasted Pumpkin (action)</h4>
+      <div class="swatch-row">
+        <div class="swatch" style="background:#9a3412"><span>700</span></div>
+        <div class="swatch" style="background:#c8611a"><span>500</span></div>
+        <div class="swatch" style="background:#d4722a"><span>400</span></div>
+        <div class="swatch" style="background:#e09050"><span>300</span></div>
+        <div class="swatch" style="background:#edb882"><span>200</span></div>
+      </div>
+    </div>
+    <div class="swatch-group">
+      <h4>Sage (accent)</h4>
+      <div class="swatch-row">
+        <div class="swatch" style="background:#3d6b4f"><span>600</span></div>
+        <div class="swatch" style="background:#4d8b62"><span>500</span></div>
+        <div class="swatch" style="background:#5fa878"><span>400</span></div>
+        <div class="swatch" style="background:#88c49e"><span>300</span></div>
+      </div>
+    </div>
+    <div class="swatch-group">
+      <h4>Oxblood (alerts)</h4>
+      <div class="swatch-row">
+        <div class="swatch" style="background:#6B1D2A"><span>700</span></div>
+        <div class="swatch" style="background:#8A2E3B"><span>500</span></div>
+        <div class="swatch" style="background:#A3404F"><span>400</span></div>
+      </div>
+    </div>
+  </div>
+
+  <hr>
+
+  <!-- Buttons -->
+  <div class="section-label">Buttons</div>
+  <div class="buttons">
+    <button class="btn btn-primary">Create Agent</button>
+    <button class="btn btn-brand">View Swarm</button>
+    <button class="btn btn-aqua">Connect</button>
+    <button class="btn btn-secondary">Cancel</button>
+    <button class="btn btn-danger">Delete Swarm</button>
+    <button class="btn btn-ghost">Skip to Review</button>
+  </div>
+
+  <hr>
+
+  <!-- Agent Cards -->
+  <div class="section-label">Agent Cards</div>
+  <div class="agent-cards">
+    <div class="agent-card active">
+      <div class="agent-header">
+        <div class="agent-emoji">&#x1F6E1;</div>
+        <div>
+          <div class="agent-name">Granite</div>
+          <div class="agent-role">Content Moderator</div>
+        </div>
+      </div>
+      <div class="agent-badges">
+        <span class="badge orange">HUB</span>
+        <span class="badge purple">CRITICAL</span>
+        <span class="badge">AUTO</span>
+      </div>
+    </div>
+    <div class="agent-card">
+      <div class="agent-header">
+        <div class="agent-emoji">&#x1F50D;</div>
+        <div>
+          <div class="agent-name">Prism</div>
+          <div class="agent-role">Data Analyst</div>
+        </div>
+      </div>
+      <div class="agent-badges">
+        <span class="badge aqua">ADVISORY</span>
+        <span class="badge">LOGS_ALL</span>
+      </div>
+    </div>
+    <div class="agent-card critical">
+      <div class="agent-header">
+        <div class="agent-emoji">&#x1F6A8;</div>
+        <div>
+          <div class="agent-name">Sentinel</div>
+          <div class="agent-role">Security Monitor</div>
+        </div>
+      </div>
+      <div class="agent-badges">
+        <span class="badge oxblood">CRITICAL</span>
+        <span class="badge">ALWAYS_ON</span>
+      </div>
+    </div>
+  </div>
+
+  <hr>
+
+  <!-- Alerts -->
+  <div class="section-label">Alerts</div>
+  <div class="alert alert-orange">&#9889; New agent "Router" created successfully. Configure its connections in Design mode.</div>
+  <div class="alert alert-purple">&#9432; Agent "Prism" has been idle for 24 hours. Consider reviewing its trigger conditions.</div>
+  <div class="alert alert-aqua">&#8505; 3 new templates available for your industry. <a href="#">Browse templates</a></div>
+  <div class="alert alert-oxblood">&#9888; Agent "Sentinel" health check failed. 3 consecutive timeouts detected.</div>
+
+  <hr>
+
+  <!-- Form Fields -->
+  <div class="section-label">Form Fields (orange focus ring)</div>
+  <div class="form-group">
+    <div class="form-row">
+      <div class="field">
+        <label>Nickname</label>
+        <input type="text" placeholder="e.g. Granite" value="Granite">
+      </div>
+      <div class="field">
+        <label>Formal Name</label>
+        <input type="text" placeholder="Content-Moderator-Filter">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="field">
+        <label>Autonomy Level</label>
+        <select>
+          <option>Hybrid</option>
+          <option>Fully Automated</option>
+          <option>Human-in-Loop</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Layer</label>
+        <select>
+          <option>Processing</option>
+          <option>Intelligence</option>
+          <option>Interface</option>
+        </select>
+      </div>
+    </div>
+    <div class="field">
+      <label>Core Task</label>
+      <textarea placeholder="Reviews all user-generated content against community guidelines..."></textarea>
+    </div>
+  </div>
+
+  <hr>
+  <p style="font-size: 13px; color: var(--gray-500); text-align: center; padding: 20px 0;">
+    Purple = brand identity &bull; Orange = actions &amp; interactive &bull; Aqua = cool accent &amp; links &bull; Oxblood = alerts only
+  </p>
+
+</div>
+</body>
+</html>

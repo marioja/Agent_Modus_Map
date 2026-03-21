@@ -39,17 +39,17 @@ interface EditorToolbarProps {
 }
 
 const modeColors: Record<EditorMode, string> = {
-  design: '#00d9ff',
-  monitor: '#22c55e',
-  analyze: '#a855f7',
+  design: '#d4722a',
+  monitor: '#5fa878',
+  analyze: '#b07cc4',
 };
 
 const btnStyle = (active?: boolean, color?: string): React.CSSProperties => ({
   padding: '5px 12px',
   borderRadius: 6,
-  border: `1px solid ${active ? (color || '#00d9ff') : 'rgba(255,255,255,0.12)'}`,
-  background: active ? `${color || '#00d9ff'}20` : 'rgba(255,255,255,0.04)',
-  color: active ? (color || '#00d9ff') : '#8b9dc3',
+  border: `1px solid ${active ? (color || '#d4722a') : 'rgba(255,255,255,0.12)'}`,
+  background: active ? `${color || '#d4722a'}20` : 'rgba(255,255,255,0.04)',
+  color: active ? (color || '#d4722a') : '#b5adb9',
   cursor: 'pointer',
   fontSize: 12,
   fontWeight: 600,
@@ -66,7 +66,7 @@ export function EditorToolbar(props: EditorToolbarProps) {
   const { theme, toggleTheme } = useTheme();
 
   const healthColors: Record<string, string> = {
-    healthy: '#22c55e', degraded: '#fbbf24', unhealthy: '#ef4444', unknown: '#6b7280',
+    healthy: '#5fa878', degraded: '#e09050', unhealthy: '#8A2E3B', unknown: '#76677e',
   };
   const hColor = healthColors[healthStatus || 'unknown'];
   const mColor = modeColors[mode];
@@ -111,7 +111,7 @@ export function EditorToolbar(props: EditorToolbarProps) {
             padding: '6px 16px', borderRadius: 6, border: 'none', cursor: 'pointer',
             fontSize: 12, fontWeight: 700, textTransform: 'capitalize',
             background: mode === m ? modeColors[m] : 'transparent',
-            color: mode === m ? '#0a0e27' : '#64748b',
+            color: mode === m ? '#140e18' : '#76677e',
             transition: 'all 0.2s',
           }}>{m}</button>
         ))}
@@ -127,7 +127,7 @@ export function EditorToolbar(props: EditorToolbarProps) {
           <button onClick={props.onToggleOrchestrator} style={btnStyle(false, mColor)}>Connect</button>
           <button onClick={props.onToggleValidation} style={btnStyle(false, mColor)}>Validate</button>
           <button onClick={props.onToggleChat} style={btnStyle(false, mColor)}>Chat</button>
-          <button onClick={props.onToggleBlastRadius} style={btnStyle(props.showBlastRadius, '#ef4444')}>
+          <button onClick={props.onToggleBlastRadius} style={btnStyle(props.showBlastRadius, '#8A2E3B')}>
             {props.showBlastRadius ? 'Blast: ON' : 'Blast'}
           </button>
         </div>
