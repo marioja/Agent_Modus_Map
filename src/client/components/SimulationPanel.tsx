@@ -114,7 +114,7 @@ export function SimulationPanel({ swarmId, isOpen, onToggle }: Props) {
             <textarea
               value={sampleInput}
               onChange={e => setSampleInput(e.target.value)}
-              placeholder="Enter a sample request to trace through the swarm... (leave blank for default)"
+              placeholder="What should the agents work on? (leave blank for a default example)"
               style={{
                 width: '100%', minHeight: 60, padding: '8px 12px', borderRadius: 8,
                 border: '1px solid var(--border-default)', background: 'var(--bg-surface)',
@@ -152,7 +152,7 @@ export function SimulationPanel({ swarmId, isOpen, onToggle }: Props) {
                         fontSize: 10, padding: '2px 8px', borderRadius: 10,
                         background: step.status === 'success' ? 'rgba(34,197,94,0.15)' : step.status === 'filtered' ? 'rgba(239,68,68,0.15)' : 'rgba(251,191,36,0.15)',
                         color: step.status === 'success' ? '#22c55e' : step.status === 'filtered' ? '#ef4444' : '#fbbf24',
-                      }}>{step.status.toUpperCase()}</span>
+                      }}>{step.status === 'needs-review' ? 'NEEDS REVIEW' : step.status.toUpperCase()}</span>
                     </div>
                     <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 4 }}>
                       {step.output}
@@ -191,11 +191,11 @@ export function SimulationPanel({ swarmId, isOpen, onToggle }: Props) {
               This makes real API calls and costs real money. Each agent in the swarm will call the configured LLM model. Review the Cost Estimate tab first.
             </div>
 
-            <div style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Input for Live Test</div>
+            <div style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>What should the agents do?</div>
             <textarea
               value={liveInput}
               onChange={e => setLiveInput(e.target.value)}
-              placeholder="Enter a real request to send through the swarm..."
+              placeholder="Describe a task for your agents, like: Find companies that need AI training help"
               style={{
                 width: '100%', minHeight: 60, padding: '8px 12px', borderRadius: 8,
                 border: '1px solid var(--border-default)', background: 'var(--bg-surface)',

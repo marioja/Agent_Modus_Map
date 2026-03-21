@@ -10,7 +10,7 @@ export interface SimulationStep {
   output: string;
   durationMs: number;
   tokensUsed: number;
-  status: 'success' | 'filtered' | 'escalated';
+  status: 'success' | 'filtered' | 'needs-review';
   downstreamAgents: string[];
 }
 
@@ -74,7 +74,7 @@ export function runMockSimulation(swarm: Swarm, sampleInput: string): Simulation
       output: isFiltered ? '[FILTERED: blocked topic detected]' : mockOutput,
       durationMs: estimatedDuration,
       tokensUsed: estimatedTokens,
-      status: isFiltered ? 'filtered' : isEscalated ? 'escalated' : 'success',
+      status: isFiltered ? 'filtered' : isEscalated ? 'needs-review' : 'success',
       downstreamAgents: downstreamIds.map(id => swarm.agents.find(a => a.id === id)?.nickname || id),
     };
     steps.push(step);
