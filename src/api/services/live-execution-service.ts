@@ -44,7 +44,19 @@ const PRICING: Record<string, { input: number; output: number }> = {
   default: { input: 3.0, output: 15.0 },
 };
 
+export type ProgressCallback = (event: { type: 'progress'; agent: string; step: number; total: number; status: string }) => void;
+
+export async function runLiveExecutionStreaming(
+  swarm: Swarm, userInput: string, onProgress: ProgressCallback
+): Promise<LiveExecutionResult> {
+  return runLiveExecutionInternal(swarm, userInput, onProgress);
+}
+
 export async function runLiveExecution(swarm: Swarm, userInput: string): Promise<LiveExecutionResult> {
+  return runLiveExecutionInternal(swarm, userInput);
+}
+
+async function runLiveExecutionInternal(swarm: Swarm, userInput: string, onProgress?: ProgressCallback): Promise<LiveExecutionResult> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     throw new Error('ANTHROPIC_API_KEY not configured. Set it in your environment to run live tests.');
@@ -170,6 +182,7 @@ export async function runLiveExecution(swarm: Swarm, userInput: string): Promise
     }
 
     steps.push(step);
+    onProgress?.({ type: 'progress', agent: agent.nickname, step: stepOrder, total: maxAgents, status: step.status });
   }
 
   const completedAt = new Date().toISOString();

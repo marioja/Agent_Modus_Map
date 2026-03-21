@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { runSimulation, getSwarmCostEstimate, runLiveTest, getSwarmPackage } from '../api.js';
+import { runSimulation, getSwarmCostEstimate, runLiveTestStreaming, getSwarmPackage } from '../api.js';
 
 interface Props {
   swarmId: string;
@@ -19,6 +19,7 @@ export function SimulationPanel({ swarmId, isOpen, onToggle, onOpenAgent }: Prop
   const [loading, setLoading] = useState(false);
   const [sampleInput, setSampleInput] = useState('');
   const [liveInput, setLiveInput] = useState('');
+  const [liveProgress, setLiveProgress] = useState<{ agent: string; step: number; total: number } | null>(null);
   const [callsPerDay, setCallsPerDay] = useState('');
 
   async function handleRunSimulation() {
@@ -32,12 +33,19 @@ export function SimulationPanel({ swarmId, isOpen, onToggle, onOpenAgent }: Prop
 
   async function handleRunLiveTest() {
     setLoading(true);
+    setLiveProgress(null);
+    setLiveResult(null);
     try {
-      const res = await runLiveTest(swarmId, liveInput || undefined);
+      const res = await runLiveTestStreaming(swarmId, liveInput || undefined, (event) => {
+        if (event.type === 'progress') {
+          setLiveProgress({ agent: event.agent || '', step: event.step || 0, total: event.total || 1 });
+        }
+      });
       setLiveResult(res);
     } catch (err: any) {
       setLiveResult({ status: 'failed', error: err.message });
     }
+    setLiveProgress(null);
     setLoading(false);
   }
 
@@ -235,6 +243,32 @@ export function SimulationPanel({ swarmId, isOpen, onToggle, onOpenAgent }: Prop
               fontWeight: 600, cursor: loading ? 'default' : 'pointer', fontSize: 13,
               fontFamily: 'var(--font-primary)', opacity: loading ? 0.5 : 1,
             }}>{loading ? 'Executing...' : 'Run Live Test'}</button>
+
+            {loading && liveProgress && (
+              <div style={{ marginTop: 12 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: 12 }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>Running: <b style={{ color: 'var(--text-primary)' }}>{liveProgress.agent}</b></span>
+                  <span style={{ color: 'var(--text-tertiary)' }}>{liveProgress.step}/{liveProgress.total}</span>
+                </div>
+                <div style={{ height: 6, background: 'var(--bg-elevated)', borderRadius: 3, overflow: 'hidden' }}>
+                  <div style={{
+                    height: '100%', borderRadius: 3,
+                    background: 'linear-gradient(90deg, #00d9ff, #a855f7)',
+                    width: `${(liveProgress.step / liveProgress.total) * 100}%`,
+                    transition: 'width 0.5s ease',
+                  }} />
+                </div>
+                <div style={{ fontSize: 10, color: 'var(--text-tertiary)', marginTop: 4 }}>
+                  {Math.round((liveProgress.step / liveProgress.total) * 100)}% complete
+                </div>
+              </div>
+            )}
+
+            {loading && !liveProgress && (
+              <div style={{ marginTop: 12, fontSize: 12, color: 'var(--text-tertiary)' }}>
+                Starting up...
+              </div>
+            )}
 
             {liveResult && liveResult.status === 'failed' && !liveResult.steps && (
               <div style={{ marginTop: 12, padding: '10px 14px', borderRadius: 8, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', fontSize: 12, color: '#f87171' }}>

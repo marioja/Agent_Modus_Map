@@ -3,7 +3,7 @@ import type Database from 'better-sqlite3';
 import { SwarmService } from '../services/swarm-service.js';
 import { runMockSimulation } from '../services/simulation-service.js';
 import { estimateSwarmCost } from '../services/cost-estimation-service.js';
-import { runLiveExecution } from '../services/live-execution-service.js';
+import { runLiveExecution, runLiveExecutionStreaming } from '../services/live-execution-service.js';
 import { generateSwarmPackage } from '../services/swarm-export-service.js';
 
 export function createSimulationRoutes(db: Database.Database): Router {
@@ -43,6 +43,28 @@ export function createSimulationRoutes(db: Database.Database): Router {
     } catch (err: any) {
       res.status(500).json({ error: err.message || 'Live execution failed' });
     }
+  });
+
+  // POST /api/simulate/:swarmId/live-stream - SSE stream of live test progress
+  router.post('/:swarmId/live-stream', async (req, res) => {
+    const swarm = swarmService.findById(req.params.swarmId);
+    if (!swarm) return res.status(404).json({ error: 'Swarm not found' });
+
+    const userInput = req.body.input || 'I need help with a customer issue.';
+
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+
+    try {
+      await runLiveExecutionStreaming(swarm, userInput, (event) => {
+        res.write(`data: ${JSON.stringify(event)}\n\n`);
+      });
+      res.write(`data: ${JSON.stringify({ type: 'done' })}\n\n`);
+    } catch (err: any) {
+      res.write(`data: ${JSON.stringify({ type: 'error', error: err.message })}\n\n`);
+    }
+    res.end();
   });
 
   // GET /api/simulate/:swarmId/export - export deployable swarm package

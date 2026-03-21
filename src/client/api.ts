@@ -447,6 +447,46 @@ export async function runLiveTest(swarmId: string, input?: string): Promise<any>
   return postJson(`/simulate/${swarmId}/live`, { input });
 }
 
+// Live Test with progress streaming
+export async function runLiveTestStreaming(
+  swarmId: string,
+  input: string | undefined,
+  onProgress: (event: { type: string; agent?: string; step?: number; total?: number; status?: string }) => void,
+): Promise<any> {
+  const res = await fetch(`${BASE}/simulate/${swarmId}/live-stream`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ input }),
+  });
+
+  const reader = res.body?.getReader();
+  if (!reader) throw new Error('No response stream');
+
+  const decoder = new TextDecoder();
+  let buffer = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+
+    const lines = buffer.split('\n');
+    buffer = lines.pop() || '';
+
+    for (const line of lines) {
+      if (line.startsWith('data: ')) {
+        try {
+          const event = JSON.parse(line.slice(6));
+          onProgress(event);
+        } catch {}
+      }
+    }
+  }
+
+  // The last event should be the full result, fall back to non-streaming
+  return runLiveTest(swarmId, input);
+}
+
 // Health check with LLM status
 export async function getApiHealth(): Promise<{ status: string; llmAvailable: boolean }> {
   return fetchJson('/health');
