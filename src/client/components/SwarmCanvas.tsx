@@ -280,7 +280,7 @@ export function SwarmCanvas({
           style={{ background: 'var(--bg-elevated)', border: '1px solid rgba(0, 217, 255, 0.3)', borderRadius: 10 }}
         />
         <MiniMap
-          position="bottom-right"
+          position="top-right"
           style={{
             background: 'var(--bg-surface)',
             border: '1px solid rgba(0, 217, 255, 0.2)',
