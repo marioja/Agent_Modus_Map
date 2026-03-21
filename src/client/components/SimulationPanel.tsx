@@ -71,6 +71,25 @@ export function SimulationPanel({ swarmId, isOpen, onToggle }: Props) {
     URL.revokeObjectURL(url);
   }
 
+  function copyResults(result: any, type: 'mock' | 'live') {
+    if (!result) return;
+    const lines: string[] = [];
+    lines.push(`${type === 'live' ? 'Live Test' : 'Mock Run'} Results`);
+    lines.push(`Status: ${result.status}`);
+    lines.push(`Agents: ${result.agentsProcessed || result.steps?.length || 0}`);
+    lines.push(`Duration: ${(result.totalDurationMs / 1000).toFixed(1)}s`);
+    if (result.totalCost !== undefined) lines.push(`Cost: $${result.totalCost}`);
+    lines.push(`Tokens: ${((result.totalInputTokens || 0) + (result.totalOutputTokens || 0) + (result.totalTokens || 0)).toLocaleString()}`);
+    lines.push('');
+    for (const step of result.steps || []) {
+      lines.push(`--- ${step.nickname} (${step.status}) ---`);
+      lines.push(step.output || step.error || '');
+      if (step.downstreamAgents?.length) lines.push(`> Passes to: ${step.downstreamAgents.join(', ')}`);
+      lines.push('');
+    }
+    navigator.clipboard.writeText(lines.join('\n'));
+  }
+
   async function handleGetCost() {
     setLoading(true);
     try {
@@ -136,6 +155,12 @@ export function SimulationPanel({ swarmId, isOpen, onToggle }: Props) {
                   <Stat label="Total Tokens" value={simResult.totalTokens.toLocaleString()} />
                   <Stat label="Est. Duration" value={`${(simResult.totalDurationMs / 1000).toFixed(1)}s`} />
                 </div>
+
+                <button onClick={() => copyResults(simResult, 'mock')} style={{
+                  marginBottom: 12, padding: '6px 14px', borderRadius: 6, border: '1px solid var(--border-default)',
+                  background: 'transparent', color: 'var(--accent-primary)', fontSize: 11, fontWeight: 600,
+                  cursor: 'pointer', fontFamily: 'var(--font-primary)', width: '100%',
+                }}>Copy All Results</button>
 
                 <div style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Execution Trace</div>
                 {simResult.steps.map((step: any, i: number) => (
@@ -233,6 +258,12 @@ export function SimulationPanel({ swarmId, isOpen, onToggle }: Props) {
                 }}>
                   Status: {liveResult.status.toUpperCase()}
                 </div>
+
+                <button onClick={() => copyResults(liveResult, 'live')} style={{
+                  marginBottom: 12, padding: '6px 14px', borderRadius: 6, border: '1px solid var(--border-default)',
+                  background: 'transparent', color: 'var(--accent-primary)', fontSize: 11, fontWeight: 600,
+                  cursor: 'pointer', fontFamily: 'var(--font-primary)', width: '100%',
+                }}>Copy All Results</button>
 
                 <div style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Agent Responses</div>
                 {liveResult.steps.map((step: any, i: number) => (
