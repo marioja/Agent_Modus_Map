@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import type Database from 'better-sqlite3';
-import { generateSwarmMarkdown, generateAgentMarkdown } from '../services/doc-generation-service.js';
+import { generateSwarmMarkdown, generateAgentMarkdown, generateHandoffDocument } from '../services/doc-generation-service.js';
 import { generateStandaloneHTML } from '../services/html-export-service.js';
 import { SwarmService } from '../services/swarm-service.js';
 
@@ -40,6 +40,23 @@ export function createDocGenerationRoutes(db: Database.Database): Router {
       res.send(markdown);
     } else {
       res.json({ data: { markdown, agentId: agent.id, nickname: agent.nickname, generatedAt: new Date().toISOString() } });
+    }
+  });
+
+  // GET /api/docs/:swarmId/handoff - implementation handoff document
+  router.get('/:swarmId/handoff', (req, res) => {
+    const swarm = swarmService.findById(req.params.swarmId);
+    if (!swarm) return res.status(404).json({ error: 'Swarm not found' });
+
+    const markdown = generateHandoffDocument(swarm);
+    const format = req.query.format || 'markdown';
+
+    if (format === 'json') {
+      res.json({ data: { markdown, swarmId: swarm.id, name: swarm.name, generatedAt: new Date().toISOString() } });
+    } else {
+      res.setHeader('Content-Type', 'text/markdown');
+      res.setHeader('Content-Disposition', `attachment; filename="${swarm.name.replace(/[^a-zA-Z0-9]/g, '_')}_handoff.md"`);
+      res.send(markdown);
     }
   });
 

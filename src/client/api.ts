@@ -421,6 +421,11 @@ export function getHTMLExportUrl(swarmId: string): string {
   return `${BASE}/docs/${swarmId}/html`;
 }
 
+// Handoff Document Export
+export function getHandoffDocUrl(swarmId: string): string {
+  return `${BASE}/docs/${swarmId}/handoff`;
+}
+
 // Health check with LLM status
 export async function getApiHealth(): Promise<{ status: string; llmAvailable: boolean }> {
   return fetchJson('/health');

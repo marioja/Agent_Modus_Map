@@ -21,7 +21,7 @@ import { CollaborationCursors } from './components/CollaborationCursors.js';
 import { useCollaboration } from './hooks/useCollaboration.js';
 import {
   getSwarm, getBlastRadius, exportSwarm, importSwarm,
-  getSwarmHealthSummary, getHTMLExportUrl,
+  getSwarmHealthSummary, getHTMLExportUrl, getHandoffDocUrl,
   createAgent, updateAgent, deleteAgent,
   createRelationship, deleteRelationship,
 } from './api.js';
@@ -211,6 +211,10 @@ export function App() {
     window.open(getHTMLExportUrl(swarmId), '_blank');
   }, [swarmId]);
 
+  const handleExportHandoff = useCallback(() => {
+    window.open(getHandoffDocUrl(swarmId), '_blank');
+  }, [swarmId]);
+
   const handleImport = useCallback(async () => {
     const input = document.createElement('input');
     input.type = 'file';
@@ -286,6 +290,7 @@ export function App() {
           onOpenDocs={() => setDocsOpen(true)}
           onExportJSON={handleExportJSON}
           onExportHTML={handleExportHTML}
+          onExportHandoff={handleExportHandoff}
           onImport={handleImport}
           showBlastRadius={showBlastRadius}
           onToggleBlastRadius={handleToggleBlastRadius}

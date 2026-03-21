@@ -31,6 +31,7 @@ interface EditorToolbarProps {
   onOpenDocs: () => void;
   onExportJSON: () => void;
   onExportHTML: () => void;
+  onExportHandoff: () => void;
   onImport: () => void;
 
   // Blast radius
@@ -148,6 +149,7 @@ export function EditorToolbar(props: EditorToolbarProps) {
           <button onClick={props.onOpenDocs} style={btnStyle(false, mColor)}>Docs</button>
           <button onClick={props.onExportJSON} style={btnStyle(false, mColor)}>Export JSON</button>
           <button onClick={props.onExportHTML} style={btnStyle(false, mColor)}>Export HTML</button>
+          <button onClick={props.onExportHandoff} style={btnStyle(false, mColor)}>Handoff Doc</button>
           <button onClick={props.onImport} style={btnStyle(false, mColor)}>Import</button>
         </div>
       )}
