@@ -40,7 +40,7 @@ export function SimulationPanel({ swarmId, isOpen, onToggle }: Props) {
 
   return (
     <div style={{
-      position: 'absolute', top: 50, right: 20, width: 480, maxHeight: 'calc(100vh - 120px)',
+      position: 'fixed', top: 60, right: 20, width: 480, maxHeight: 'calc(100vh - 120px)',
       background: 'var(--bg-base)', border: '1px solid var(--border-default)', borderRadius: 12,
       display: 'flex', flexDirection: 'column', zIndex: 25,
       boxShadow: '0 10px 40px rgba(0,0,0,0.6)',
