@@ -13,6 +13,7 @@ export interface AgentNodeData {
   blastRadiusHops: number | null;
   emoji?: string;
   healthStatus?: 'healthy' | 'degraded' | 'unhealthy' | 'unknown';
+  onInfoClick?: () => void;
 }
 
 const badgeColors: Record<string, { bg: string; border: string }> = {
@@ -78,6 +79,25 @@ function AgentNodeComponent({ data }: NodeProps) {
           {d.blastRadiusHops}
         </div>
       )}
+
+      {/* Info button */}
+      <div
+        onClick={(e) => { e.stopPropagation(); d.onInfoClick?.(); }}
+        style={{
+          position: 'absolute', top: 8, left: 8,
+          width: 22, height: 22, borderRadius: '50%',
+          background: 'rgba(255,255,255,0.1)',
+          border: `1px solid ${d.layerColor}50`,
+          color: d.layerColor,
+          fontSize: 12, fontWeight: 700, fontStyle: 'italic',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          cursor: 'pointer',
+          transition: 'all 0.15s',
+        }}
+        onMouseEnter={(e) => { (e.target as HTMLElement).style.background = d.layerColor + '30'; }}
+        onMouseLeave={(e) => { (e.target as HTMLElement).style.background = 'rgba(255,255,255,0.1)'; }}
+        title="View agent details"
+      >i</div>
 
       <style>{`@keyframes healthPulse { 0%,100%{opacity:1} 50%{opacity:0.4} }`}</style>
 

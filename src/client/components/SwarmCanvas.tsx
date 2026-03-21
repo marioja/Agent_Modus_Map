@@ -17,6 +17,33 @@ import type { Swarm, Agent, BlastRadiusResult, RelationshipType } from '../../sh
 
 const nodeTypes = { agent: AgentNode };
 
+// Default emojis based on agent nickname or formal name keywords
+const NICKNAME_EMOJIS: Record<string, string> = {
+  Doorbell: '🔔', Compass: '🧭', Vibe: '💜', Courier: '📨', Echo: '👂',
+  Handshake: '🤝', Catalog: '📚', Spark: '✨', Polish: '💎', Lens: '🔍',
+  Rosetta: '🌍', Domino: '🎯', Gavel: '⚖️', Knot: '🔗', Relay: '🔌',
+  Scribe: '📝', Pulse: '💓', Sentinel: '🛡️', Thermometer: '🌡️',
+  Howler: '🚨', Mirror: '🪞', Clockwork: '⚙️', Sherlock: '🕵️', Mosaic: '📊',
+  Grease: '🔧', Portal: '🚪', Triage: '🏥', Router: '🔀', Resolver: '✅',
+  Escalator: '📢', Analyst: '📈',
+};
+
+function getDefaultEmoji(nickname: string, formalName: string): string {
+  if (NICKNAME_EMOJIS[nickname]) return NICKNAME_EMOJIS[nickname];
+  const lower = (nickname + ' ' + formalName).toLowerCase();
+  if (lower.includes('security') || lower.includes('guard')) return '🛡️';
+  if (lower.includes('monitor') || lower.includes('health')) return '💓';
+  if (lower.includes('data') || lower.includes('analytics')) return '📊';
+  if (lower.includes('content') || lower.includes('generator')) return '✨';
+  if (lower.includes('workflow') || lower.includes('process')) return '⚙️';
+  if (lower.includes('api') || lower.includes('integration')) return '🔌';
+  if (lower.includes('alert') || lower.includes('notify')) return '🔔';
+  if (lower.includes('search') || lower.includes('find')) return '🔍';
+  if (lower.includes('user') || lower.includes('customer')) return '👤';
+  if (lower.includes('log') || lower.includes('audit')) return '📝';
+  return '🤖';
+}
+
 const edgeStyles: Record<string, { stroke: string; strokeDasharray?: string; strokeWidth: number }> = {
   dependsOn: { stroke: '#00d9ff', strokeWidth: 2 },
   feedsInto: { stroke: '#7c3aed', strokeDasharray: '8,4', strokeWidth: 2 },
@@ -35,6 +62,7 @@ interface SwarmCanvasProps {
   onDropAgent?: (position: { x: number; y: number }, template: string) => void;
   onDeleteEdge?: (edgeId: string) => void;
   agentHealthMap?: Record<string, 'healthy' | 'degraded' | 'unhealthy' | 'unknown'>;
+  onOpenAgentDetail?: (agent: Agent) => void;
 }
 
 function getLayerColor(layerId: string, layers: Swarm['layers']): string {
@@ -44,7 +72,7 @@ function getLayerColor(layerId: string, layers: Swarm['layers']): string {
 
 export function SwarmCanvas({
   swarm, selectedAgent, onSelectAgent, blastRadius, showBlastRadius,
-  onNodeDragStop, onConnect, onDropAgent, onDeleteEdge, agentHealthMap,
+  onNodeDragStop, onConnect, onDropAgent, onDeleteEdge, agentHealthMap, onOpenAgentDetail,
 }: SwarmCanvasProps) {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const { screenToFlowPosition } = useReactFlow();
@@ -71,8 +99,9 @@ export function SwarmCanvas({
         isSelected,
         isInBlastRadius: !!isInBlastRadius,
         blastRadiusHops: isInBlastRadius ? blastHops : null,
-        emoji: (agent.config as any)?.emoji || undefined,
+        emoji: (agent.config as any)?.emoji || getDefaultEmoji(agent.nickname, agent.formalName),
         healthStatus: agentHealthMap?.[agent.id] || undefined,
+        onInfoClick: () => onOpenAgentDetail?.(agent),
       };
 
       return {

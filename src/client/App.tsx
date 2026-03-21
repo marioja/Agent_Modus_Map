@@ -129,7 +129,6 @@ export function App() {
   const handleSelectAgent = useCallback(async (agent: Agent | null) => {
     setSelectedAgent(agent);
     if (agent) {
-      setEditorOpen(true);
       if (showBlastRadius) {
         const results = await getBlastRadius(swarmId, agent.nickname);
         setBlastRadius(results);
@@ -139,6 +138,11 @@ export function App() {
       setBlastRadius([]);
     }
   }, [showBlastRadius, swarmId]);
+
+  const handleOpenAgentDetail = useCallback((agent: Agent) => {
+    setSelectedAgent(agent);
+    setEditorOpen(true);
+  }, []);
 
   const handleToggleBlastRadius = useCallback(async () => {
     const next = !showBlastRadius;
@@ -322,6 +326,7 @@ export function App() {
             onDropAgent={handleDropAgent}
             onDeleteEdge={handleDeleteEdge}
             agentHealthMap={agentHealthMap}
+            onOpenAgentDetail={handleOpenAgentDetail}
           />
 
           {editorMode === 'design' && (
