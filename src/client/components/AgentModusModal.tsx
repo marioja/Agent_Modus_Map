@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Logo } from './Logo.js';
+import { getAgentEmoji } from '../utils/agent-emojis.js';
 import type { Agent, Badge, LayerDefinition, Swarm, RelationshipType } from '../../shared/types/index.js';
 
 interface Props {
@@ -153,7 +154,7 @@ export function AgentModusModal({ agent, swarm, layers, onSave, onDelete, onClos
         {/* Header - Agent Identity */}
         <div style={{ padding: '24px 30px', borderBottom: `2px solid ${borderColor}40`, display: 'flex', gap: 24, alignItems: 'flex-start', flexShrink: 0 }}>
           <div style={{ flex: '0 0 auto' }}>
-            <div style={{ fontSize: 64, textAlign: 'center', marginBottom: 8 }}>{config.emoji || '🤖'}</div>
+            <div style={{ fontSize: 64, textAlign: 'center', marginBottom: 8 }}>{getAgentEmoji(agent.nickname, agent.formalName, config.emoji)}</div>
             <input value={config.emoji || ''} onChange={e => updateConfig({ emoji: e.target.value })} placeholder="🤖" maxLength={4}
               style={{ width: 80, textAlign: 'center', fontSize: 24, ...inp, marginTop: 0 }} />
           </div>
