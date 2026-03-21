@@ -367,7 +367,12 @@ export function App() {
       <GovernancePanel swarmId={swarmId} isOpen={governanceOpen} onClose={() => setGovernanceOpen(false)} />
       <CollaborationPanel swarmId={swarmId} swarm={swarm} isOpen={collaborationOpen} onClose={() => setCollaborationOpen(false)} />
       <OptimizationPanel swarmId={swarmId} isOpen={optimizationOpen} onClose={() => setOptimizationOpen(false)} />
-          <SimulationPanel swarmId={swarmId} isOpen={simulationOpen} onToggle={() => setSimulationOpen(!simulationOpen)} />
+          <SimulationPanel swarmId={swarmId} isOpen={simulationOpen} onToggle={() => setSimulationOpen(!simulationOpen)}
+            onOpenAgent={(agentId) => {
+              const agent = swarm.agents.find(a => a.id === agentId);
+              if (agent) { setSelectedAgent(agent); setEditorOpen(true); }
+            }}
+          />
       <DocViewer swarmId={swarmId} isOpen={docsOpen} onClose={() => setDocsOpen(false)} />
       <KeyboardShortcutsHelp isOpen={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
 

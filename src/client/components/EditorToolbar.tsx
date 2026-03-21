@@ -139,7 +139,7 @@ export function EditorToolbar(props: EditorToolbarProps) {
           <button onClick={props.onToggleValidation} style={btnStyle(false, mColor)}>Validate</button>
           <button onClick={props.onToggleChat} style={btnStyle(false, mColor)}>Chat</button>
           <button onClick={props.onToggleBlastRadius} style={btnStyle(props.showBlastRadius, '#ef4444')}>
-            {props.showBlastRadius ? 'Impact: ON' : 'Impact'}
+            {props.showBlastRadius ? 'Blast: ON' : 'Blast'}
           </button>
         </div>
       )}

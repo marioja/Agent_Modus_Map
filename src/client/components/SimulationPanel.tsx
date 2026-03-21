@@ -5,11 +5,12 @@ interface Props {
   swarmId: string;
   isOpen: boolean;
   onToggle: () => void;
+  onOpenAgent?: (agentId: string) => void;
 }
 
 type Tab = 'simulate' | 'cost' | 'live' | 'deploy';
 
-export function SimulationPanel({ swarmId, isOpen, onToggle }: Props) {
+export function SimulationPanel({ swarmId, isOpen, onToggle, onOpenAgent }: Props) {
   const [tab, setTab] = useState<Tab>('simulate');
   const [simResult, setSimResult] = useState<any>(null);
   const [costResult, setCostResult] = useState<any>(null);
@@ -301,6 +302,9 @@ export function SimulationPanel({ swarmId, isOpen, onToggle }: Props) {
                   </div>
                 ))}
               </div>
+
+              {/* Diagnostics */}
+              <DiagnosticsSection steps={liveResult.steps} onOpenAgent={onOpenAgent} />
             )}
           </div>
         )}
@@ -450,6 +454,160 @@ export function SimulationPanel({ swarmId, isOpen, onToggle }: Props) {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+interface Diagnostic {
+  agentId: string;
+  nickname: string;
+  severity: 'error' | 'warning' | 'tip';
+  message: string;
+  fix: string;
+}
+
+function analyzeLiveResults(steps: any[]): Diagnostic[] {
+  const diagnostics: Diagnostic[] = [];
+
+  for (const step of steps) {
+    // Error: agent failed completely
+    if (step.status === 'error') {
+      const err = (step.error || '').toLowerCase();
+      let message = `${step.nickname} failed to run.`;
+      let fix = `Open ${step.nickname} and check its settings.`;
+
+      if (err.includes('401') || err.includes('unauthorized') || err.includes('api key')) {
+        message = `${step.nickname} couldn't connect to the AI service. Your API key may be missing or invalid.`;
+        fix = 'Check that your API key is set up in your environment.';
+      } else if (err.includes('timeout') || err.includes('timed out')) {
+        message = `${step.nickname} took too long to respond and timed out.`;
+        fix = `Try simplifying ${step.nickname}'s instructions or reducing the amount of text it needs to process.`;
+      } else if (err.includes('rate') || err.includes('429')) {
+        message = `${step.nickname} was rate-limited. Too many requests to the AI service.`;
+        fix = 'Wait a minute and try again, or reduce the number of agents.';
+      } else if (err.includes('model') || err.includes('not found')) {
+        message = `${step.nickname} is configured to use a model that doesn't exist or isn't available.`;
+        fix = `Open ${step.nickname} and change its model to a valid one.`;
+      }
+
+      diagnostics.push({ agentId: step.agentId, nickname: step.nickname, severity: 'error', message, fix });
+
+      // Check for downstream impact
+      if (step.downstreamAgents?.length > 0) {
+        diagnostics.push({
+          agentId: step.agentId, nickname: step.nickname, severity: 'warning',
+          message: `Because ${step.nickname} failed, these agents never got their data: ${step.downstreamAgents.join(', ')}.`,
+          fix: `Fix ${step.nickname} first, then run the test again.`,
+        });
+      }
+    }
+
+    // Warning: agent output is suspiciously short or generic
+    if (step.status === 'success' && step.output) {
+      const output = step.output as string;
+
+      if (output.length < 50) {
+        diagnostics.push({
+          agentId: step.agentId, nickname: step.nickname, severity: 'warning',
+          message: `${step.nickname} gave a very short response (${output.length} characters). It may not have enough instructions to work with.`,
+          fix: `Open ${step.nickname} and add more detail to its Core Task and Instructions.`,
+        });
+      }
+
+      if (output.includes('I\'d be happy to help') || output.includes('I can help') || output.includes('How can I assist')) {
+        diagnostics.push({
+          agentId: step.agentId, nickname: step.nickname, severity: 'tip',
+          message: `${step.nickname} responded like a chatbot instead of doing its job. Its prompt may be too vague.`,
+          fix: `Open ${step.nickname} and make its Core Task more specific. Tell it exactly what to produce, not just what its role is.`,
+        });
+      }
+
+      if (output.includes('I don\'t have access') || output.includes('I cannot') || output.includes('I\'m unable')) {
+        diagnostics.push({
+          agentId: step.agentId, nickname: step.nickname, severity: 'tip',
+          message: `${step.nickname} said it can't do what was asked. It may need different instructions or a connected data source.`,
+          fix: `Open ${step.nickname} and review its Core Task. Make sure it's asking for something the AI can actually do without external tools.`,
+        });
+      }
+    }
+
+    // Slow agent
+    if (step.durationMs > 15000) {
+      diagnostics.push({
+        agentId: step.agentId, nickname: step.nickname, severity: 'tip',
+        message: `${step.nickname} took ${(step.durationMs / 1000).toFixed(0)} seconds. That's slow and could cause timeouts in production.`,
+        fix: `Try simplifying ${step.nickname}'s instructions or switching it to a faster model.`,
+      });
+    }
+  }
+
+  // Check for agents that were skipped entirely
+  const processedIds = new Set(steps.map((s: any) => s.agentId));
+  for (const step of steps) {
+    for (const downstream of step.downstreamAgents || []) {
+      // downstream is a nickname, not ID, so we check by name
+      const wasProcessed = steps.some((s: any) => s.nickname === downstream);
+      if (!wasProcessed) {
+        diagnostics.push({
+          agentId: step.agentId, nickname: downstream, severity: 'warning',
+          message: `${downstream} was supposed to receive data from ${step.nickname} but never ran.`,
+          fix: `This usually means a previous agent failed or the swarm reached its processing limit. Check the agents above for errors.`,
+        });
+      }
+    }
+  }
+
+  return diagnostics;
+}
+
+function DiagnosticsSection({ steps, onOpenAgent }: { steps: any[]; onOpenAgent?: (agentId: string) => void }) {
+  const diagnostics = analyzeLiveResults(steps);
+  if (diagnostics.length === 0) {
+    return (
+      <div style={{
+        marginTop: 16, padding: '12px 14px', borderRadius: 8,
+        background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)',
+        fontSize: 13, color: '#22c55e', textAlign: 'center',
+      }}>
+        All agents ran successfully. No issues detected.
+      </div>
+    );
+  }
+
+  const severityColors = {
+    error: { bg: 'rgba(239,68,68,0.08)', border: '#ef4444', color: '#f87171' },
+    warning: { bg: 'rgba(251,191,36,0.08)', border: '#fbbf24', color: '#fbbf24' },
+    tip: { bg: 'rgba(0,217,255,0.06)', border: '#00d9ff', color: '#00d9ff' },
+  };
+
+  return (
+    <div style={{ marginTop: 16 }}>
+      <div style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>
+        What To Fix ({diagnostics.length} {diagnostics.length === 1 ? 'issue' : 'issues'})
+      </div>
+      {diagnostics.map((d, i) => {
+        const sc = severityColors[d.severity];
+        return (
+          <div key={i} style={{
+            padding: '10px 14px', marginBottom: 6, borderRadius: 8,
+            background: sc.bg, borderLeft: `3px solid ${sc.border}`,
+          }}>
+            <div style={{ fontSize: 12, color: sc.color, fontWeight: 600, marginBottom: 4 }}>
+              {d.message}
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 6 }}>
+              {d.fix}
+            </div>
+            {onOpenAgent && (
+              <button onClick={() => onOpenAgent(d.agentId)} style={{
+                padding: '3px 10px', borderRadius: 4, border: `1px solid ${sc.border}`,
+                background: 'transparent', color: sc.color, fontSize: 10, fontWeight: 600,
+                cursor: 'pointer', fontFamily: 'var(--font-primary)',
+              }}>Fix {d.nickname}</button>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
