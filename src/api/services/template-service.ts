@@ -28,6 +28,107 @@ export interface SwarmTemplate {
   }>;
 }
 
+// Default core tasks for template agents so users understand each agent's role
+const DEFAULT_CORE_TASKS: Record<string, string> = {
+  // Customer Service
+  Portal: 'Receive incoming customer requests from all channels (chat, email, phone, social) and route them into the support system.',
+  Triage: 'Classify incoming requests by urgency and category. Route high-priority issues immediately, queue standard requests.',
+  Mood: 'Analyze customer sentiment in real-time during interactions. Flag frustrated or angry customers for priority handling.',
+  Queue: 'Assign tickets to the right resolution agent based on issue type, agent availability, and customer priority level.',
+  Atlas: 'Search the knowledge base for relevant answers, guides, and past solutions. Provide context to resolution agents.',
+  Solver: 'Resolve customer issues using knowledge base answers, account tools, and standard procedures. Handle straightforward cases automatically.',
+  Scribble: 'Draft professional, on-brand responses to customer inquiries. Match tone to customer sentiment and issue type.',
+  Checklist: 'Review drafted responses for accuracy, completeness, and brand voice compliance before sending to customers.',
+  Translate: 'Translate responses into the customer\'s preferred language while maintaining tone and accuracy.',
+  Ladder: 'Escalate complex or sensitive issues to the right tier of human support. Include full context so agents don\'t ask customers to repeat themselves.',
+  Captain: 'Supervise active support sessions. Override automated decisions when needed. Handle VIP and crisis situations directly.',
+  Witness: 'Log every interaction, decision, and outcome for compliance, training, and quality review purposes.',
+  Alarm: 'Monitor SLA timers and alert the team when response times are approaching breach thresholds.',
+  Trend: 'Identify recurring issue patterns across tickets. Spot emerging problems before they become widespread.',
+  Score: 'Predict customer satisfaction scores based on interaction patterns. Flag at-risk customers for proactive outreach.',
+  Coach: 'Analyze agent performance and generate training recommendations. Identify knowledge gaps and skill development opportunities.',
+  Dashboard: 'Generate real-time and periodic reports on support metrics: volume, resolution time, CSAT, first-contact resolution rate.',
+  // Content Ops
+  Brief: 'Receive content requests and create structured briefs with topic, audience, format, deadline, and key messages.',
+  Quill: 'Write long-form content (blog posts, articles, guides, whitepapers) based on content briefs and research.',
+  Pixel: 'Create visual content (graphics, infographics, social media images) aligned with brand guidelines.',
+  Clip: 'Produce video content (scripts, storyboards, short-form clips) for marketing and educational purposes.',
+  Brand: 'Review all content for brand voice consistency, messaging alignment, and visual identity compliance.',
+  Legal: 'Review content for legal compliance, copyright issues, required disclaimers, and regulatory requirements.',
+  Editor: 'Perform editorial review for quality, clarity, accuracy, and readability. Suggest improvements and approve for publication.',
+  Boost: 'Optimize content for search engines: keyword research, meta descriptions, header structure, internal linking.',
+  Format: 'Adapt content into multiple formats: blog to social posts, article to email newsletter, guide to video script.',
+  Schedule: 'Manage the content calendar. Schedule publications across channels at optimal times for engagement.',
+  Broadcast: 'Distribute published content across all channels: website, social media, email, syndication partners.',
+  Tracker: 'Track content performance metrics: views, engagement, shares, conversions, and time on page.',
+  Suggest: 'Generate content ideas based on trending topics, audience interests, competitor analysis, and performance data.',
+  Report: 'Create ROI reports showing content performance against business goals and budget allocation.',
+  // DevOps
+  Builder: 'Compile source code, run build processes, and package artifacts for deployment. Report build status and errors.',
+  Lint: 'Run static code analysis, linting, and formatting checks. Flag code quality issues before they reach review.',
+  Unit: 'Execute unit and integration test suites. Report pass/fail results with detailed failure analysis.',
+  Scanner: 'Scan code and dependencies for security vulnerabilities, outdated packages, and license compliance issues.',
+  Pipeline: 'Orchestrate the full CI/CD pipeline: build, test, scan, stage, deploy. Manage pipeline state and approvals.',
+  Canary: 'Deploy new versions to a small subset of traffic first. Monitor for errors before full rollout.',
+  Release: 'Package and tag releases. Generate changelogs. Manage version numbers and release notes.',
+  Rollback: 'Automatically revert deployments when health checks fail or error rates exceed thresholds.',
+  Patch: 'Apply hotfixes and emergency patches outside the normal release cycle. Fast-track critical fixes.',
+  Provision: 'Set up and configure infrastructure: servers, databases, load balancers, DNS, and SSL certificates.',
+  Deps: 'Monitor and update project dependencies. Flag breaking changes and security updates.',
+  Cache: 'Manage build and deployment caches. Optimize build times by caching intermediate artifacts.',
+  Metrics: 'Collect and visualize deployment metrics: frequency, lead time, failure rate, and recovery time.',
+  // Data Pipeline
+  Collector: 'Ingest data from multiple sources: APIs, databases, file uploads, webhooks, and streaming feeds.',
+  Schema: 'Validate incoming data against expected schemas. Flag malformed records and schema drift.',
+  Transform: 'Clean, normalize, and transform raw data into structured formats ready for analysis or storage.',
+  Validate: 'Run data quality checks: completeness, accuracy, consistency, and freshness. Reject bad records.',
+  Enrich: 'Enhance data records by joining with external sources, adding computed fields, and resolving entities.',
+  Enricher: 'Enhance data records by joining with external sources, adding computed fields, and resolving entities.',
+  Lake: 'Store raw and processed data in the data lake. Manage partitioning, retention, and access controls.',
+  Stream: 'Process real-time data streams with low latency. Handle event-driven transformations and alerts.',
+  Warehouse: 'Load processed data into the data warehouse. Manage tables, indexes, and query optimization.',
+  Query: 'Execute analytical queries against the data warehouse. Generate reports and dashboards from query results.',
+  Batch: 'Run scheduled batch processing jobs: daily aggregations, weekly reports, monthly reconciliation.',
+  Lineage: 'Track data lineage from source to destination. Document transformations and dependencies between datasets.',
+  ML: 'Train and deploy machine learning models on processed data. Monitor model performance and trigger retraining.',
+  // Security SOC
+  Watcher: 'Monitor network traffic, system logs, and user activity for suspicious patterns and known attack signatures.',
+  NetWatch: 'Monitor network perimeter for unauthorized access attempts, port scanning, and traffic anomalies.',
+  Forensic: 'Investigate security incidents by collecting and analyzing evidence: logs, memory dumps, network captures.',
+  Quarantine: 'Isolate compromised systems, accounts, or data to prevent threat spread. Manage containment procedures.',
+  Responder: 'Execute incident response procedures: containment, eradication, recovery, and post-incident review.',
+  Compliance: 'Audit systems against compliance frameworks (SOC2, HIPAA, PCI-DSS). Generate compliance reports.',
+  Comply: 'Verify that systems and processes meet regulatory requirements. Flag compliance gaps and track remediation.',
+  Endpoint: 'Monitor endpoint devices for malware, unauthorized software, and policy violations.',
+  PostMortem: 'Create detailed post-incident reports: timeline, root cause, impact assessment, and prevention recommendations.',
+  Alert: 'Aggregate and prioritize security alerts. Reduce noise by correlating related events into incidents.',
+  // Research
+  WebSearch: 'Search the web for relevant information on research topics. Collect sources from academic papers, news, and industry reports.',
+  DocSearch: 'Search internal document repositories for relevant prior research, reports, and reference materials.',
+  DocScan: 'Extract key information from uploaded documents: PDFs, reports, presentations, and spreadsheets.',
+  Cite: 'Manage citations and references. Ensure proper attribution and format citations in the required style.',
+  FactCheck: 'Verify factual claims against multiple sources. Flag unverified or contradictory information.',
+  Synthesizer: 'Combine findings from multiple sources into coherent summaries. Identify patterns and contradictions.',
+  GraphSearch: 'Search knowledge graphs and structured databases for entity relationships and connected information.',
+  Verify: 'Cross-reference findings across sources. Rate confidence levels and flag low-confidence claims.',
+  Hypothesis: 'Generate hypotheses based on research findings. Suggest experiments or analyses to test them.',
+  // Sales
+  Prospect: 'Identify potential customers through market research, lead databases, and referral networks.',
+  Outreach: 'Send personalized outreach messages via email and LinkedIn. Track open rates and responses.',
+  Compete: 'Monitor competitor activity, pricing, and positioning. Identify competitive advantages and threats.',
+  Proposal: 'Generate custom proposals based on prospect needs, pricing tiers, and competitive positioning.',
+  Forecast: 'Predict sales outcomes based on pipeline data, historical patterns, and market conditions.',
+  Win: 'Analyze won deals to identify success patterns. Document what worked for future reference.',
+  Progress: 'Track deal progress through pipeline stages. Alert on stalled deals and upcoming deadlines.',
+  // HR
+  Hire: 'Process new hire paperwork, collect required documents, and create employee records in the system.',
+  Assign: 'Schedule and assign onboarding training modules based on role, department, and compliance requirements.',
+  Buddy: 'Match new hires with mentors based on role, department, experience level, and interests.',
+  Welcome: 'Guide new employees through their first week: orientation schedule, key contacts, office setup, and FAQs.',
+  Feedback: 'Collect feedback from new hires about the onboarding experience. Identify improvement opportunities.',
+  HRDash: 'Generate HR analytics dashboards: time-to-productivity, onboarding completion rates, new hire satisfaction scores.',
+};
+
 const templates: SwarmTemplate[] = [
   {
     id: 'customer-service-v1',
@@ -463,10 +564,14 @@ export class TemplateService {
         const layerId = layerIds[agent.layerIndex];
         const posX = 150 + agent.positionIndex * 300;
         const posY = 150 + agent.layerIndex * 250;
+        const defaultConfig = agent.config || {};
+        if (!defaultConfig.coreTask && DEFAULT_CORE_TASKS[agent.nickname]) {
+          (defaultConfig as any).coreTask = DEFAULT_CORE_TASKS[agent.nickname];
+        }
         insertAgent.run(
           agentId, swarmId, agent.nickname, agent.formalName, agent.descriptor,
           layerId, JSON.stringify(agent.badges), posX, posY,
-          agent.config ? JSON.stringify(agent.config) : '{}'
+          JSON.stringify(defaultConfig)
         );
       }
 

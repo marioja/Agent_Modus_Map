@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { listSwarms, createBlankSwarm, importFromCSV, getCSVTemplateUrl, getTemplates, instantiateTemplate, deleteSwarm } from '../api.js';
+import { SettingsPanel } from './SettingsPanel.js';
 import { ThemeToggle } from './ThemeToggle.js';
 import { LogoWithText } from './Logo.js';
 import { useTheme } from '../hooks/useTheme.js';
@@ -20,6 +21,7 @@ export function Dashboard({ onOpenSwarm }: DashboardProps) {
   const [creating, setCreating] = useState(false);
   const [csvData, setCsvData] = useState('');
   const [csvName, setCsvName] = useState('');
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   useEffect(() => {
     listSwarms().then(setSwarms).catch(console.error);
@@ -71,6 +73,11 @@ export function Dashboard({ onOpenSwarm }: DashboardProps) {
           borderBottom: '1px solid var(--border-default)',
         }}>
           <LogoWithText size={36} />
+          <button onClick={() => setSettingsOpen(true)} style={{
+            padding: '6px 14px', borderRadius: 8, border: '1px solid var(--border-default)',
+            background: 'transparent', color: 'var(--text-secondary)', cursor: 'pointer',
+            fontSize: 13, fontWeight: 500, fontFamily: 'var(--font-primary)',
+          }}>Settings</button>
           <ThemeToggle theme={theme} onToggle={toggleTheme} />
         </header>
 
@@ -258,6 +265,7 @@ export function Dashboard({ onOpenSwarm }: DashboardProps) {
           </>
         )}
       </div>
+      <SettingsPanel isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </div>
   );
 }

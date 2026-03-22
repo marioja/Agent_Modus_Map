@@ -13,6 +13,7 @@ import { createDocGenerationRoutes } from './routes/doc-generation-routes.js';
 import { createAuthRoutes } from './routes/auth-routes.js';
 import { createMcpRoutes } from './routes/mcp-routes.js';
 import { createSimulationRoutes } from './routes/simulation-routes.js';
+import { createSettingsRoutes } from './routes/settings-routes.js';
 import { createImportRoutes } from './routes/import-routes.js';
 import { initKnowledgeBase, seedKnowledgeBase } from './db/knowledge-base.js';
 import { initHealthStore } from './db/health-store.js';
@@ -47,6 +48,7 @@ export function createApp(db?: ReturnType<typeof getDb>) {
   app.use('/api/optimization', createOptimizationRoutes(database));
   app.use('/api/docs', createDocGenerationRoutes(database));
   app.use('/api/simulate', createSimulationRoutes(database));
+  app.use('/api/settings', createSettingsRoutes());
   app.use('/api/auth', createAuthRoutes(database));
   app.use('/api/mcp', createMcpRoutes());
   app.use('/api/import', createImportRoutes(database));
