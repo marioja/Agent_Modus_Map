@@ -20,7 +20,7 @@ Recruit 5-8 testers across three experience levels:
 - [ ] Print/share the task sheet below for each tester
 - [ ] Have a note-taking template ready (spreadsheet linked below)
 
-## Test Session Structure (30 min per tester)
+## Test Session Structure (40 min per tester)
 
 ### Intro (2 min)
 "This is a tool for designing AI agent teams. I'm going to ask you to try a few things. There are no wrong answers. If something is confusing, that's the tool's problem, not yours. Think out loud as you go."
@@ -55,22 +55,40 @@ Recruit 5-8 testers across three experience levels:
 **Prompt**: "Go back to the dashboard. Create a new swarm from scratch. Add 3 agents for a customer support team: a greeter, a problem solver, and an escalation manager. Connect them."
 
 **Watch for**:
-- Can they find "+ Agent" in Design mode?
+- Can they find "+ Agent" in Build mode?
 - Do they understand the wizard steps?
 - Do they fill in the Core Task? Do suggestions appear?
 - Can they figure out how to connect agents?
 - Do they use the Relationship Orchestrator?
 
-### Task 5: Export (3 min)
-**Prompt**: "Switch to Analyze mode. Export a handoff document. Open it and tell me if it makes sense."
+### Task 5: Settings (3 min)
+**Prompt**: "Find where you would add your API keys so the agents can actually run."
 
 **Watch for**:
-- Can they find Analyze mode?
-- Do they find the Handoff Doc button?
-- Does the document download?
-- Can they read and understand the output?
+- Can they find the Settings button on the dashboard?
+- Do they understand what API keys are for?
+- Can they find the "Test Connections" button?
+- Does the status indicator make sense to them?
 
-### Task 6: Free Exploration (3 min)
+### Task 6: Run a Test (5 min)
+**Prompt**: "Switch to Test mode. Click Run Test. Try the Mock Run tab first, then look at the Cost tab."
+
+**Watch for**:
+- Can they find Test mode?
+- Do they understand Mock vs Cost vs Live Test vs Deploy tabs?
+- Can they read the simulation results?
+- Does the cost breakdown make sense?
+
+### Task 7: Export and Deploy (3 min)
+**Prompt**: "Switch to Ship mode. Export a Handoff Doc. Then try Deploy Package."
+
+**Watch for**:
+- Do they understand Build/Watch/Test/Ship modes?
+- Can they find the Handoff Doc and Deploy buttons?
+- Does the handoff document make sense?
+- Do they understand what the deploy package is for?
+
+### Task 8: Free Exploration (3 min)
 **Prompt**: "Spend a couple minutes clicking around anywhere you haven't explored yet. Tell me what you find."
 
 **Watch for**:
@@ -108,7 +126,7 @@ For each tester, track:
 
 | Metric | Target |
 |--------|--------|
-| Task completion rate (Tasks 1-5) | > 80% |
+| Task completion rate (Tasks 1-7) | > 80% |
 | Average ease-of-use rating | > 6/10 |
 | Average usefulness rating | > 7/10 |
 | Critical usability issues found | < 3 |
@@ -118,12 +136,15 @@ For each tester, track:
 
 These are known areas that might trip people up:
 
-- **Mode switching**: Users might not realize Design/Monitor/Analyze modes show different toolbar buttons
-- **Agent wizard vs. palette**: Two ways to add agents, might cause confusion
+- **Mode switching**: Users might not realize Build/Watch/Test/Ship modes show different toolbar buttons
+- **Agent wizard**: The 8-step wizard might feel long, users might skip steps
 - **Relationship types**: "Depends On" vs "Feeds Into" distinction may not be obvious
-- **Blast Radius**: Technical concept, non-technical users may not understand it
+- **Blast button**: Non-obvious what "Blast" means (it shows impact if an agent goes down)
 - **Chat bot**: Users might not notice the logo widget in the bottom-right is a chat
 - **Light/dark mode**: Toggle is small, they might miss it
+- **Settings**: Users might not realize they need API keys before running live tests
+- **Deploy vs Export**: Users might not understand the difference between exporting JSON and deploying a package
+- **Live test duration**: Takes 60+ seconds, users might think it's frozen if progress bar doesn't show
 
 ## After Testing
 
