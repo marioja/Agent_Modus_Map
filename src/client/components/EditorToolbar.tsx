@@ -61,7 +61,7 @@ const btnStyle = (active?: boolean, color?: string): React.CSSProperties => ({
   borderRadius: 6,
   border: `1px solid ${active ? (color || '#00d9ff') : 'rgba(255,255,255,0.12)'}`,
   background: active ? `${color || '#00d9ff'}20` : 'rgba(255,255,255,0.04)',
-  color: active ? (color || '#00d9ff') : '#8b9dc3',
+  color: active ? (color || '#00d9ff') : 'var(--text-secondary)',
   cursor: 'pointer',
   fontSize: 12,
   fontWeight: 600,
@@ -79,7 +79,7 @@ export function EditorToolbar(props: EditorToolbarProps) {
   const { theme, toggleTheme } = useTheme();
 
   const healthColors: Record<string, string> = {
-    healthy: '#22c55e', degraded: '#fbbf24', unhealthy: '#ef4444', unknown: '#64748b',
+    healthy: '#22c55e', degraded: '#fbbf24', unhealthy: '#ef4444', unknown: 'var(--text-tertiary)',
   };
   const hColor = healthColors[healthStatus || 'unknown'];
   const mColor = modeColors[mode];
@@ -121,7 +121,7 @@ export function EditorToolbar(props: EditorToolbarProps) {
             padding: '6px 14px', borderRadius: 6, border: 'none', cursor: 'pointer',
             fontSize: 12, fontWeight: 700,
             background: mode === m ? modeColors[m] : 'transparent',
-            color: mode === m ? '#fff' : '#64748b',
+            color: mode === m ? 'var(--text-inverse)' : 'var(--text-tertiary)',
             transition: 'all 0.2s',
             fontFamily: 'var(--font-primary)',
           }}>{modeLabels[m]}</button>

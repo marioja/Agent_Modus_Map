@@ -120,7 +120,7 @@ function AgentNodeComponent({ data }: NodeProps) {
         fontSize: 20,
         fontWeight: 700,
         textAlign: 'center',
-        color: '#fff',
+        color: 'var(--text-primary)',
         marginBottom: 4,
       }}>
         {d.nickname}
@@ -129,7 +129,7 @@ function AgentNodeComponent({ data }: NodeProps) {
       <div style={{
         fontSize: 11,
         textAlign: 'center',
-        color: '#8b9dc3',
+        color: 'var(--text-secondary)',
         marginBottom: 6,
         lineHeight: 1.3,
       }}>
@@ -139,7 +139,7 @@ function AgentNodeComponent({ data }: NodeProps) {
       <div style={{
         fontSize: 12,
         textAlign: 'center',
-        color: '#a0aec0',
+        color: 'var(--text-tertiary)',
         fontStyle: 'italic',
         marginBottom: 10,
       }}>
@@ -160,7 +160,7 @@ function AgentNodeComponent({ data }: NodeProps) {
               padding: '2px 7px',
               borderRadius: 10,
               background: style.bg,
-              color: '#fff',
+              color: 'var(--text-primary)',
               border: `1px solid ${style.border}`,
               whiteSpace: 'nowrap',
             }}>

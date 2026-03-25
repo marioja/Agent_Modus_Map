@@ -273,10 +273,10 @@ export function SwarmCanvas({
         style={{ background: 'transparent' }}
         connectionLineStyle={{ stroke: '#00d9ff', strokeWidth: 2 }}
       >
-        <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="rgba(0, 217, 255, 0.06)" />
+        <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="var(--border-subtle)" />
         <Controls
           position="bottom-left"
-          style={{ background: 'var(--bg-elevated)', border: '1px solid rgba(0, 217, 255, 0.3)', borderRadius: 10 }}
+          style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-default)', borderRadius: 10 }}
         />
       </ReactFlow>
 
