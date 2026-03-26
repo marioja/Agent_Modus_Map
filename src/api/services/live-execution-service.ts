@@ -72,11 +72,41 @@ async function runLiveExecutionInternal(swarm: Swarm, userInput: string, onProgr
   const entryAgents = findEntryPoints(swarm);
   const downstream = buildDownstreamMap(swarm);
 
+  // Pre-search: use Haiku to generate smart search queries, search once, share with all agents
+  let sharedSearchContext = '';
+  try {
+    console.log('[LIVE] Generating search queries with Haiku...');
+    const queryResponse = await client.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 300,
+      temperature: 0,
+      system: 'You generate web search queries. Given a user request, output exactly 4 specific search queries that would find REAL COMPANY NAMES matching the request. Include location, industry terms, and business directories. One query per line. No numbering, no explanation, just the queries.',
+      messages: [{ role: 'user', content: userInput }],
+    });
+    const queryText = queryResponse.content.filter(b => b.type === 'text').map(b => (b as any).text).join('\n');
+    const queries = queryText.split('\n').map(q => q.trim()).filter(q => q.length > 5).slice(0, 4);
+    console.log(`[LIVE] Search queries: ${queries.join(' | ')}`);
+
+    const allResults = [];
+    for (const q of queries) {
+      const results = await searchWeb(q, 8);
+      allResults.push(...results);
+    }
+    if (allResults.length > 0) {
+      sharedSearchContext = '\n\n=== REAL WEB SEARCH RESULTS (shared across all agents) ===\nThese are actual search results. Extract real company names, URLs, and details from them. Do NOT ignore these and use training data instead.\n\n' + formatSearchResults(allResults) + '\n\n=== END SEARCH RESULTS ===';
+      console.log(`[LIVE] Found ${allResults.length} search results to share with all agents`);
+    }
+    totalInputTokens += queryResponse.usage?.input_tokens || 0;
+    totalOutputTokens += queryResponse.usage?.output_tokens || 0;
+  } catch (err) {
+    console.log('[LIVE] Search query generation failed, continuing without search:', (err as Error).message);
+  }
+
   // BFS through agents
   const visited = new Set<string>();
   const queue: Array<{ agent: Agent; input: string }> = [];
   for (const agent of entryAgents) {
-    queue.push({ agent, input: userInput });
+    queue.push({ agent, input: userInput + sharedSearchContext });
   }
 
   let stepOrder = 0;
@@ -107,29 +137,8 @@ async function runLiveExecutionInternal(swarm: Swarm, userInput: string, onProgr
     console.log(`[LIVE] Agent ${stepOrder + 1}: ${agent.nickname} (${model}, max ${Math.min(maxTokens, 1024)} tokens)...`);
 
     try {
-      // For entry agents with search capability, do web searches first
-      let searchContext = '';
-      const skills = (config.skills as Array<{ name: string }>) || [];
-      const hasMcp = (config.mcp as any)?.servers?.length > 0;
-      const isEntry = agent.badges.includes('ENTRY');
-      const coreTask = (config.coreTask as string) || '';
-      const needsSearch = isEntry || coreTask.toLowerCase().includes('search') || coreTask.toLowerCase().includes('find') || coreTask.toLowerCase().includes('monitor') || coreTask.toLowerCase().includes('identify');
-
-      if (needsSearch) {
-        console.log(`[LIVE] Searching web for ${agent.nickname}...`);
-        const queries = generateSearchQueries(input, coreTask);
-        const allResults = [];
-        for (const q of queries.slice(0, 4)) {
-          const results = await searchWeb(q, 8);
-          allResults.push(...results);
-        }
-        if (allResults.length > 0) {
-          searchContext = '\n\n=== MANDATORY: USE THESE REAL SEARCH RESULTS ===\nYou MUST base your response on the actual companies and data below. Do NOT ignore these results and use your training data instead. Extract the real company names, URLs, and details from these search results. If a result mentions a specific company name, website, phone number, or email, you MUST include it in your output.\n\n' + formatSearchResults(allResults) + '\n\n=== END SEARCH RESULTS ===\n\nFor each company found above, provide: Company Name, Website URL, Phone (if found), Email (if found), What They Do, Why They Might Need Our Services.';
-        }
-      }
-
-      // Limit input length to prevent token overflow
-      const truncatedInput = (input + searchContext).slice(0, 6000);
+      // Limit input length to prevent token overflow (search context already included from shared pre-search)
+      const truncatedInput = input.slice(0, 6000);
 
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 30000);
@@ -176,7 +185,7 @@ async function runLiveExecutionInternal(swarm: Swarm, userInput: string, onProgr
       for (const targetId of downstreamIds) {
         const targetAgent = swarm.agents.find(a => a.id === targetId);
         if (targetAgent && !visited.has(targetId)) {
-          const contextInput = `Previous agent "${agent.nickname}" produced this output:\n\n${output.slice(0, 800)}\n\nProcess this according to your role.`;
+          const contextInput = `Previous agent "${agent.nickname}" produced this output:\n\n${output.slice(0, 800)}\n\nProcess this according to your role.${sharedSearchContext}`;
           queue.push({ agent: targetAgent, input: contextInput });
           dataFlow.push({
             from: agent.nickname,
