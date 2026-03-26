@@ -674,18 +674,29 @@ const DeployTab = React.memo(function DeployTab({ swarmId, query, onQueryChange 
     setTimeout(() => setCopiedBtn(null), 2000);
   }
 
+  const lastStatusJson = useRef('');
+  const lastResultsJson = useRef('');
+
   const refreshStatus = useCallback(async () => {
     try {
       const status = await getDeployStatus(swarmId);
-      setDeployStatus(status);
-      if (status?.query && !queryPrefilledRef.current) {
-        onQueryChange(status.query);
-        queryPrefilledRef.current = true;
+      const statusJson = JSON.stringify(status);
+      if (statusJson !== lastStatusJson.current) {
+        lastStatusJson.current = statusJson;
+        setDeployStatus(status);
+        if (status?.query && !queryPrefilledRef.current) {
+          onQueryChange(status.query);
+          queryPrefilledRef.current = true;
+        }
       }
       const history = await getDeployResults(swarmId);
-      setResults(history || []);
+      const historyJson = JSON.stringify(history?.length || 0);
+      if (historyJson !== lastResultsJson.current) {
+        lastResultsJson.current = historyJson;
+        setResults(history || []);
+      }
     } catch { /* no deployment yet */ }
-  }, [swarmId]); // eslint-disable-line -- onQueryChange intentionally excluded to prevent re-render loop
+  }, [swarmId]);
 
   // Load status once on mount
   const hasLoadedRef = useRef(false);
