@@ -431,7 +431,7 @@ export function AgentModusModal({ agent, swarm, layers, onSave, onDelete, onClos
               {(config.notes || []).map((n, i) => (
                 <div key={n.id} style={{ ...card, position: 'relative' }}>
                   <p style={{ color: 'var(--text-primary)', fontSize: 13, margin: 0, whiteSpace: 'pre-wrap' }}>{n.content}</p>
-                  <div style={{ color: '#64748b', fontSize: 10, marginTop: 6 }}>{n.author} | {new Date(n.timestamp).toLocaleString()}</div>
+                  <div style={{ color: 'var(--text-tertiary)', fontSize: 10, marginTop: 6 }}>{n.author} | {new Date(n.timestamp).toLocaleString()}</div>
                 </div>
               ))}
               <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
@@ -457,14 +457,14 @@ export function AgentModusModal({ agent, swarm, layers, onSave, onDelete, onClos
             ) : (
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                 <span style={{ color: '#ef4444', fontSize: 12 }}>Delete "{nickname}"?{dependentCount > 0 ? ` (${dependentCount} dependents)` : ''}</span>
-                <button onClick={() => onDelete(agent.id)} style={{ padding: '4px 12px', borderRadius: 6, border: 'none', background: '#ef4444', color: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>Yes, Delete</button>
-                <button onClick={() => setConfirmDelete(false)} style={{ padding: '4px 12px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.2)', background: 'transparent', color: '#8b9dc3', cursor: 'pointer', fontSize: 12 }}>Cancel</button>
+                <button onClick={() => onDelete(agent.id)} style={{ padding: '4px 12px', borderRadius: 6, border: 'none', background: '#ef4444', color: 'var(--text-primary)', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>Yes, Delete</button>
+                <button onClick={() => setConfirmDelete(false)} style={{ padding: '4px 12px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.2)', background: 'transparent', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: 12 }}>Cancel</button>
               </div>
             )}
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <span style={{ color: 'var(--text-secondary)', fontSize: 11, alignSelf: 'center' }}>ID: {agent.id.slice(0, 12)}...</span>
-            {dirty && <button onClick={handleSave} style={{ padding: '8px 24px', borderRadius: 8, border: 'none', background: '#00d9ff', color: 'var(--text-inverse)', fontWeight: 700, cursor: 'pointer', fontSize: 14 }}>Save Changes</button>}
+            {dirty && <button onClick={handleSave} style={{ padding: '8px 24px', borderRadius: 8, border: 'none', background: 'var(--accent-primary)', color: 'var(--text-inverse)', fontWeight: 700, cursor: 'pointer', fontSize: 14 }}>Save Changes</button>}
           </div>
         </div>
       </div>
@@ -474,13 +474,13 @@ export function AgentModusModal({ agent, swarm, layers, onSave, onDelete, onClos
 
 // Sub-components
 function SectionHeader({ title }: { title: string }) {
-  return <div style={{ color: '#00d9ff', fontSize: 14, fontWeight: 700, marginTop: 20, marginBottom: 8, paddingBottom: 6, borderBottom: '1px solid rgba(0,217,255,0.2)', textTransform: 'uppercase', letterSpacing: 0.5 }}>{title}</div>;
+  return <div style={{ color: 'var(--text-accent)', fontSize: 14, fontWeight: 700, marginTop: 20, marginBottom: 8, paddingBottom: 6, borderBottom: '1px solid rgba(0,217,255,0.2)', textTransform: 'uppercase', letterSpacing: 0.5 }}>{title}</div>;
 }
 
 function InfoCard({ title, value, children }: { title: string; value: string; children?: React.ReactNode }) {
   return (
     <div style={{ ...card }}>
-      <div style={{ color: '#64748b', fontSize: 11, textTransform: 'uppercase', marginBottom: 4 }}>{title}</div>
+      <div style={{ color: 'var(--text-tertiary)', fontSize: 11, textTransform: 'uppercase', marginBottom: 4 }}>{title}</div>
       <div style={{ color: 'var(--text-primary)', fontSize: 15, fontWeight: 600 }}>{value}</div>
       {children}
     </div>
@@ -505,7 +505,7 @@ function RelSection({ title, color, agents, agentConfig, type, onUpdateNote }: {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <span style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: 14 }}>{a.nickname}</span>
-                <span style={{ color: '#64748b', fontSize: 12, marginLeft: 8 }}>{a.descriptor}</span>
+                <span style={{ color: 'var(--text-tertiary)', fontSize: 12, marginLeft: 8 }}>{a.descriptor}</span>
               </div>
               <span style={{ color: 'var(--text-secondary)', fontSize: 10 }}>{a.badges.join(', ')}</span>
             </div>
@@ -520,8 +520,8 @@ function RelSection({ title, color, agents, agentConfig, type, onUpdateNote }: {
 }
 
 // Styles
-const inp: React.CSSProperties = { width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(0,0,0,0.3)', color: '#fff', fontSize: 13, outline: 'none', marginTop: 4, boxSizing: 'border-box', resize: 'vertical' as const };
-const lbl: React.CSSProperties = { fontSize: 11, color: '#8b9dc3', textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 12, display: 'block' };
+const inp: React.CSSProperties = { width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(0,0,0,0.3)', color: 'var(--text-primary)', fontSize: 13, outline: 'none', marginTop: 4, boxSizing: 'border-box', resize: 'vertical' as const };
+const lbl: React.CSSProperties = { fontSize: 11, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 12, display: 'block' };
 const card: React.CSSProperties = { padding: 12, borderRadius: 10, background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.06)' };
-const addBtn: React.CSSProperties = { padding: '6px 14px', borderRadius: 6, border: '1px solid rgba(0,217,255,0.3)', background: 'rgba(0,217,255,0.08)', color: '#00d9ff', cursor: 'pointer', fontSize: 12, fontWeight: 600, marginTop: 8 };
+const addBtn: React.CSSProperties = { padding: '6px 14px', borderRadius: 6, border: '1px solid rgba(0,217,255,0.3)', background: 'rgba(0,217,255,0.08)', color: 'var(--text-accent)', cursor: 'pointer', fontSize: 12, fontWeight: 600, marginTop: 8 };
 const rmBtn: React.CSSProperties = { padding: '4px 8px', borderRadius: 4, border: 'none', background: 'rgba(239,68,68,0.2)', color: '#ef4444', cursor: 'pointer', fontSize: 11 };

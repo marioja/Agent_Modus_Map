@@ -55,7 +55,7 @@ export function DocViewer({ swarmId, isOpen, onClose }: Props) {
             }}>Copy</button>
             <button onClick={handleDownload} style={{
               padding: '6px 12px', borderRadius: 6, border: 'none',
-              background: '#00d9ff', color: 'var(--text-inverse)', cursor: 'pointer', fontSize: 12, fontWeight: 600,
+              background: 'var(--accent-primary)', color: 'var(--text-inverse)', cursor: 'pointer', fontSize: 12, fontWeight: 600,
             }}>Download .md</button>
             <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: 18 }}>X</button>
           </div>
@@ -63,10 +63,10 @@ export function DocViewer({ swarmId, isOpen, onClose }: Props) {
 
         <div style={{ flex: 1, overflow: 'auto', padding: 20 }}>
           {loading ? (
-            <p style={{ color: '#64748b' }}>Generating documentation...</p>
+            <p style={{ color: 'var(--text-tertiary)' }}>Generating documentation...</p>
           ) : (
             <pre style={{
-              color: '#cbd5e1', fontSize: 13, lineHeight: 1.7, whiteSpace: 'pre-wrap',
+              color: 'var(--text-primary)', fontSize: 13, lineHeight: 1.7, whiteSpace: 'pre-wrap',
               fontFamily: '"SF Mono", "Fira Code", monospace',
             }}>{markdown}</pre>
           )}

@@ -54,7 +54,7 @@ export function OptimizationPanel({ swarmId, isOpen, onClose }: Props) {
         <div style={{ flex: 1, overflow: 'auto', padding: 20 }}>
           {tab === 'bottlenecks' && (
             <div>
-              {bottlenecks.length === 0 && <p style={{ color: '#64748b' }}>No bottlenecks detected. Your swarm topology looks well-distributed.</p>}
+              {bottlenecks.length === 0 && <p style={{ color: 'var(--text-tertiary)' }}>No bottlenecks detected. Your swarm topology looks well-distributed.</p>}
               {bottlenecks.map(b => (
                 <div key={b.agentId} style={{
                   padding: 14, marginBottom: 10, borderRadius: 8, background: 'var(--bg-surface)',
@@ -65,13 +65,13 @@ export function OptimizationPanel({ swarmId, isOpen, onClose }: Props) {
                     <div style={{
                       padding: '2px 10px', borderRadius: 12, fontSize: 12, fontWeight: 700,
                       background: b.score >= 70 ? '#dc2626' : b.score >= 40 ? '#d97706' : '#2563eb',
-                      color: '#fff',
+                      color: 'var(--text-primary)',
                     }}>
                       Risk: {b.score}
                     </div>
                   </div>
                   <div style={{ color: 'var(--text-secondary)', fontSize: 12, marginTop: 6 }}>{b.reason}</div>
-                  <div style={{ display: 'flex', gap: 16, marginTop: 8, color: '#64748b', fontSize: 12 }}>
+                  <div style={{ display: 'flex', gap: 16, marginTop: 8, color: 'var(--text-tertiary)', fontSize: 12 }}>
                     <span>In: {b.inDegree}</span>
                     <span>Out: {b.outDegree}</span>
                     <span>Dependents: {b.dependents}</span>
@@ -94,15 +94,15 @@ export function OptimizationPanel({ swarmId, isOpen, onClose }: Props) {
                 display: 'flex', gap: 24,
               }}>
                 <div>
-                  <div style={{ color: '#64748b', fontSize: 11, textTransform: 'uppercase' }}>Monthly Est.</div>
-                  <div style={{ color: '#00d9ff', fontSize: 28, fontWeight: 700 }}>${cost.estimatedMonthlyCost}</div>
+                  <div style={{ color: 'var(--text-tertiary)', fontSize: 11, textTransform: 'uppercase' }}>Monthly Est.</div>
+                  <div style={{ color: 'var(--text-accent)', fontSize: 28, fontWeight: 700 }}>${cost.estimatedMonthlyCost}</div>
                 </div>
                 <div>
-                  <div style={{ color: '#64748b', fontSize: 11, textTransform: 'uppercase' }}>Agents</div>
+                  <div style={{ color: 'var(--text-tertiary)', fontSize: 11, textTransform: 'uppercase' }}>Agents</div>
                   <div style={{ color: 'var(--text-primary)', fontSize: 28, fontWeight: 700 }}>{cost.totalAgents}</div>
                 </div>
                 <div>
-                  <div style={{ color: '#64748b', fontSize: 11, textTransform: 'uppercase' }}>Relationships</div>
+                  <div style={{ color: 'var(--text-tertiary)', fontSize: 11, textTransform: 'uppercase' }}>Relationships</div>
                   <div style={{ color: 'var(--text-primary)', fontSize: 28, fontWeight: 700 }}>{cost.totalRelationships}</div>
                 </div>
               </div>
@@ -114,7 +114,7 @@ export function OptimizationPanel({ swarmId, isOpen, onClose }: Props) {
                   display: 'flex', justifyContent: 'space-between',
                 }}>
                   <span style={{ color: 'var(--text-primary)', fontSize: 13 }}>{b.layer} ({b.agents} agents)</span>
-                  <span style={{ color: '#00d9ff', fontWeight: 600 }}>${b.estimatedCost}/mo</span>
+                  <span style={{ color: 'var(--text-accent)', fontWeight: 600 }}>${b.estimatedCost}/mo</span>
                 </div>
               ))}
 
@@ -124,7 +124,7 @@ export function OptimizationPanel({ swarmId, isOpen, onClose }: Props) {
                   {cost.optimizationSuggestions.map((s, i) => (
                     <div key={i} style={{
                       padding: '8px 12px', marginBottom: 6, borderRadius: 8,
-                      background: '#1a1a2e', borderLeft: '3px solid #f59e0b', color: '#fbbf24', fontSize: 13,
+                      background: 'var(--bg-subtle)', borderLeft: '3px solid #f59e0b', color: '#fbbf24', fontSize: 13,
                     }}>{s}</div>
                   ))}
                 </>
@@ -147,7 +147,7 @@ export function OptimizationPanel({ swarmId, isOpen, onClose }: Props) {
                 />
                 <button onClick={runWhatIf} style={{
                   padding: '8px 16px', borderRadius: 6, border: 'none', cursor: 'pointer',
-                  background: '#ef4444', color: '#fff', fontWeight: 600, fontSize: 13,
+                  background: '#ef4444', color: 'var(--text-primary)', fontWeight: 600, fontSize: 13,
                 }}>Simulate Removal</button>
               </div>
 
@@ -165,7 +165,7 @@ export function OptimizationPanel({ swarmId, isOpen, onClose }: Props) {
                         fontWeight: 700,
                       }}>Risk: {whatIf.riskScore}/100</span>
                     </div>
-                    <p style={{ color: '#cbd5e1', fontSize: 13, marginTop: 8, lineHeight: 1.5 }}>{whatIf.recommendation}</p>
+                    <p style={{ color: 'var(--text-primary)', fontSize: 13, marginTop: 8, lineHeight: 1.5 }}>{whatIf.recommendation}</p>
                   </div>
 
                   {whatIf.impactedAgents.length > 0 && (
@@ -180,7 +180,7 @@ export function OptimizationPanel({ swarmId, isOpen, onClose }: Props) {
                           <span style={{
                             padding: '2px 8px', borderRadius: 12, fontSize: 11, fontWeight: 600,
                             background: a.impact === 'high' ? '#dc2626' : a.impact === 'medium' ? '#d97706' : '#2563eb',
-                            color: '#fff',
+                            color: 'var(--text-primary)',
                           }}>{a.impact}</span>
                         </div>
                       ))}
@@ -189,7 +189,7 @@ export function OptimizationPanel({ swarmId, isOpen, onClose }: Props) {
                 </div>
               )}
 
-              {!whatIf && <p style={{ color: '#64748b' }}>Enter an agent nickname and click "Simulate Removal" to see the impact analysis.</p>}
+              {!whatIf && <p style={{ color: 'var(--text-tertiary)' }}>Enter an agent nickname and click "Simulate Removal" to see the impact analysis.</p>}
             </div>
           )}
         </div>
@@ -201,7 +201,7 @@ export function OptimizationPanel({ swarmId, isOpen, onClose }: Props) {
 function tabStyle(active: boolean): React.CSSProperties {
   return {
     padding: '4px 12px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600,
-    background: active ? '#00d9ff' : 'var(--bg-overlay)',
+    background: active ? 'var(--accent-primary)' : 'var(--bg-overlay)',
     color: active ? 'var(--text-inverse)' : 'var(--text-secondary)',
   };
 }

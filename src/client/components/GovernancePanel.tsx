@@ -56,7 +56,7 @@ export function GovernancePanel({ swarmId, isOpen, onClose }: Props) {
         <div style={{ flex: 1, overflow: 'auto', padding: 20 }}>
           {tab === 'audit' && (
             <div>
-              {audit.length === 0 && <p style={{ color: '#64748b' }}>No audit entries yet. Actions on the swarm will be logged here.</p>}
+              {audit.length === 0 && <p style={{ color: 'var(--text-tertiary)' }}>No audit entries yet. Actions on the swarm will be logged here.</p>}
               {audit.map(entry => (
                 <div key={entry.id} style={{
                   padding: '10px 14px', marginBottom: 8, borderRadius: 8, background: 'var(--bg-surface)',
@@ -64,13 +64,13 @@ export function GovernancePanel({ swarmId, isOpen, onClose }: Props) {
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ color: 'var(--text-primary)', fontSize: 13, fontWeight: 600 }}>{entry.action}</span>
-                    <span style={{ color: '#64748b', fontSize: 11 }}>{new Date(entry.timestamp).toLocaleString()}</span>
+                    <span style={{ color: 'var(--text-tertiary)', fontSize: 11 }}>{new Date(entry.timestamp).toLocaleString()}</span>
                   </div>
                   <div style={{ color: 'var(--text-secondary)', fontSize: 12, marginTop: 4 }}>
                     by {entry.userName}
                   </div>
                   {Object.keys(entry.details).length > 0 && (
-                    <pre style={{ color: '#64748b', fontSize: 11, marginTop: 6, whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>
+                    <pre style={{ color: 'var(--text-tertiary)', fontSize: 11, marginTop: 6, whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>
                       {JSON.stringify(entry.details, null, 2)}
                     </pre>
                   )}
@@ -106,7 +106,7 @@ export function GovernancePanel({ swarmId, isOpen, onClose }: Props) {
                     width: 24, height: 24, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: 12, fontWeight: 700,
                     background: check.status === 'pass' ? '#16a34a' : check.status === 'warning' ? '#d97706' : '#dc2626',
-                    color: '#fff',
+                    color: 'var(--text-primary)',
                   }}>
                     {check.status === 'pass' ? 'P' : check.status === 'warning' ? '!' : 'F'}
                   </span>
@@ -127,7 +127,7 @@ export function GovernancePanel({ swarmId, isOpen, onClose }: Props) {
 function tabStyle(active: boolean): React.CSSProperties {
   return {
     padding: '4px 12px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600,
-    background: active ? '#00d9ff' : 'var(--bg-overlay)',
+    background: active ? 'var(--accent-primary)' : 'var(--bg-overlay)',
     color: active ? 'var(--text-inverse)' : 'var(--text-secondary)',
   };
 }

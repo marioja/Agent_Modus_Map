@@ -88,23 +88,23 @@ export function CollaborationPanel({ swarmId, swarm, isOpen, onClose }: Props) {
                 />
                 <button onClick={handleAddComment} style={{
                   padding: '8px 16px', borderRadius: 6, border: 'none', cursor: 'pointer',
-                  background: '#00d9ff', color: 'var(--text-inverse)', fontWeight: 600, fontSize: 13,
+                  background: 'var(--accent-primary)', color: 'var(--text-inverse)', fontWeight: 600, fontSize: 13,
                 }}>Post</button>
               </div>
 
-              {comments.length === 0 && <p style={{ color: '#64748b' }}>No comments yet. Start a conversation about this swarm design.</p>}
+              {comments.length === 0 && <p style={{ color: 'var(--text-tertiary)' }}>No comments yet. Start a conversation about this swarm design.</p>}
               {comments.map(c => (
                 <div key={c.id} style={{
                   padding: '10px 14px', marginBottom: 8, borderRadius: 8, background: 'var(--bg-surface)',
                   opacity: c.resolved ? 0.5 : 1,
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ color: '#00d9ff', fontSize: 12, fontWeight: 600 }}>{c.userName}</span>
+                    <span style={{ color: 'var(--text-accent)', fontSize: 12, fontWeight: 600 }}>{c.userName}</span>
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                      <span style={{ color: '#64748b', fontSize: 11 }}>{new Date(c.timestamp).toLocaleString()}</span>
+                      <span style={{ color: 'var(--text-tertiary)', fontSize: 11 }}>{new Date(c.timestamp).toLocaleString()}</span>
                       {!c.resolved && (
                         <button onClick={() => handleResolve(c.id)} style={{
-                          background: 'none', border: '1px solid var(--border-default)', color: '#64748b',
+                          background: 'none', border: '1px solid var(--border-default)', color: 'var(--text-tertiary)',
                           padding: '2px 8px', borderRadius: 4, cursor: 'pointer', fontSize: 11,
                         }}>Resolve</button>
                       )}
@@ -121,21 +121,21 @@ export function CollaborationPanel({ swarmId, swarm, isOpen, onClose }: Props) {
             <div>
               <button onClick={handleSaveVersion} style={{
                 padding: '8px 16px', borderRadius: 6, border: 'none', cursor: 'pointer',
-                background: '#00d9ff', color: 'var(--text-inverse)', fontWeight: 600, fontSize: 13, marginBottom: 16,
+                background: 'var(--accent-primary)', color: 'var(--text-inverse)', fontWeight: 600, fontSize: 13, marginBottom: 16,
               }}>Save Current Version</button>
 
-              {versions.length === 0 && <p style={{ color: '#64748b' }}>No versions saved yet. Save a snapshot to track changes over time.</p>}
+              {versions.length === 0 && <p style={{ color: 'var(--text-tertiary)' }}>No versions saved yet. Save a snapshot to track changes over time.</p>}
               {versions.map(v => (
                 <div key={v.id} style={{
                   padding: '10px 14px', marginBottom: 8, borderRadius: 8, background: 'var(--bg-surface)',
                   border: '1px solid var(--border-default)',
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ color: '#00d9ff', fontWeight: 600 }}>v{v.version}</span>
-                    <span style={{ color: '#64748b', fontSize: 11 }}>{new Date(v.timestamp).toLocaleString()}</span>
+                    <span style={{ color: 'var(--text-accent)', fontWeight: 600 }}>v{v.version}</span>
+                    <span style={{ color: 'var(--text-tertiary)', fontSize: 11 }}>{new Date(v.timestamp).toLocaleString()}</span>
                   </div>
                   <div style={{ color: 'var(--text-primary)', fontSize: 13, marginTop: 4 }}>{v.changeDescription || 'No description'}</div>
-                  <div style={{ color: '#64748b', fontSize: 11, marginTop: 4 }}>by {v.userName}</div>
+                  <div style={{ color: 'var(--text-tertiary)', fontSize: 11, marginTop: 4 }}>by {v.userName}</div>
                 </div>
               ))}
             </div>
@@ -149,7 +149,7 @@ export function CollaborationPanel({ swarmId, swarm, isOpen, onClose }: Props) {
 function tabStyle(active: boolean): React.CSSProperties {
   return {
     padding: '4px 12px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600,
-    background: active ? '#00d9ff' : 'var(--bg-overlay)',
+    background: active ? 'var(--accent-primary)' : 'var(--bg-overlay)',
     color: active ? 'var(--text-inverse)' : 'var(--text-secondary)',
   };
 }

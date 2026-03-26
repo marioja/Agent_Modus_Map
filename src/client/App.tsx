@@ -44,21 +44,28 @@ export function App() {
   const [loading, setLoading] = useState(false);
   const [editorMode, setEditorMode] = useState<EditorMode>('build');
 
-  // Panel states
-  const [paletteOpen, setPaletteOpen] = useState(false);
+  // Panel state: only one panel open at a time (except editor modal and chat which overlay)
+  type Panel = null | 'palette' | 'validation' | 'orchestrator' | 'wizard'
+    | 'health' | 'traces' | 'governance' | 'collaboration'
+    | 'optimization' | 'simulation' | 'docs' | 'shortcuts';
+  const [openPanel, setOpenPanel] = useState<Panel>(null);
   const [editorOpen, setEditorOpen] = useState(false);
-  const [validationOpen, setValidationOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
-  const [orchestratorOpen, setOrchestratorOpen] = useState(false);
-  const [wizardOpen, setWizardOpen] = useState(false);
-  const [healthDashboardOpen, setHealthDashboardOpen] = useState(false);
-  const [tracesOpen, setTracesOpen] = useState(false);
-  const [governanceOpen, setGovernanceOpen] = useState(false);
-  const [collaborationOpen, setCollaborationOpen] = useState(false);
-  const [optimizationOpen, setOptimizationOpen] = useState(false);
-  const [simulationOpen, setSimulationOpen] = useState(false);
-  const [docsOpen, setDocsOpen] = useState(false);
-  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+
+  // Panel helpers
+  const togglePanel = (p: Panel) => setOpenPanel(prev => prev === p ? null : p);
+  const paletteOpen = openPanel === 'palette';
+  const validationOpen = openPanel === 'validation';
+  const orchestratorOpen = openPanel === 'orchestrator';
+  const wizardOpen = openPanel === 'wizard';
+  const healthDashboardOpen = openPanel === 'health';
+  const tracesOpen = openPanel === 'traces';
+  const governanceOpen = openPanel === 'governance';
+  const collaborationOpen = openPanel === 'collaboration';
+  const optimizationOpen = openPanel === 'optimization';
+  const simulationOpen = openPanel === 'simulation';
+  const docsOpen = openPanel === 'docs';
+  const shortcutsOpen = openPanel === 'shortcuts';
   const [healthSummary, setHealthSummary] = useState<SwarmHealthSummary | null>(null);
   const [agentHealthMap, setAgentHealthMap] = useState<Record<string, AgentHealthSummary['status']>>({});
   const [showOnboarding, setShowOnboarding] = useState(() => !localStorage.getItem(ONBOARDING_KEY));
@@ -119,8 +126,8 @@ export function App() {
     const handler = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
       switch (e.key) {
-        case '?': setShortcutsOpen(v => !v); break;
-        case 'Escape': setSelectedAgent(null); setEditorOpen(false); setShortcutsOpen(false); break;
+        case '?': togglePanel('shortcuts'); break;
+        case 'Escape': setSelectedAgent(null); setEditorOpen(false); setOpenPanel(null); break;
       }
     };
     window.addEventListener('keydown', handler);
@@ -176,7 +183,7 @@ export function App() {
     try {
       await createAgent(swarmId, data);
       await reloadSwarm();
-      setWizardOpen(false);
+      setOpenPanel(null);
     } catch (err) { console.error('Failed to create agent:', err); }
   }, [swarmId, reloadSwarm]);
 
@@ -292,20 +299,20 @@ export function App() {
           onModeChange={setEditorMode}
           onBack={handleBack}
           healthStatus={healthSummary?.overall}
-          onTogglePalette={() => setWizardOpen(true)}
+          onTogglePalette={() => setOpenPanel('wizard')}
           onToggleChat={() => setChatOpen(!chatOpen)}
-          onToggleValidation={() => setValidationOpen(!validationOpen)}
-          onToggleOrchestrator={() => setOrchestratorOpen(!orchestratorOpen)}
-          onOpenHealth={() => setHealthDashboardOpen(true)}
-          onOpenTraces={() => setTracesOpen(true)}
-          onOpenGovernance={() => setGovernanceOpen(true)}
-          onOpenCollaboration={() => setCollaborationOpen(true)}
-          onOpenOptimization={() => setOptimizationOpen(true)}
-          onOpenDocs={() => setDocsOpen(true)}
+          onToggleValidation={() => togglePanel('validation')}
+          onToggleOrchestrator={() => togglePanel('orchestrator')}
+          onOpenHealth={() => setOpenPanel('health')}
+          onOpenTraces={() => setOpenPanel('traces')}
+          onOpenGovernance={() => setOpenPanel('governance')}
+          onOpenCollaboration={() => setOpenPanel('collaboration')}
+          onOpenOptimization={() => setOpenPanel('optimization')}
+          onOpenDocs={() => setOpenPanel('docs')}
           onExportJSON={handleExportJSON}
           onExportHTML={handleExportHTML}
           onExportHandoff={handleExportHandoff}
-          onToggleSimulation={() => setSimulationOpen(!simulationOpen)}
+          onToggleSimulation={() => togglePanel('simulation')}
           onImport={handleImport}
           showBlastRadius={showBlastRadius}
           onToggleBlastRadius={handleToggleBlastRadius}
@@ -315,7 +322,7 @@ export function App() {
           <CollaborationCursors cursors={collab.cursors} users={collab.users} connected={collab.connected} />
 
           {editorMode === 'build' && (
-            <AgentPalette layers={swarm.layers} onDragStart={() => {}} isOpen={paletteOpen} onToggle={() => setPaletteOpen(!paletteOpen)} />
+            <AgentPalette layers={swarm.layers} onDragStart={() => {}} isOpen={paletteOpen} onToggle={() => togglePanel('palette')} />
           )}
 
           <SwarmCanvas
@@ -333,7 +340,7 @@ export function App() {
           />
 
           {editorMode === 'build' && (
-            <ValidationPanel messages={validationMessages} isOpen={validationOpen} onToggle={() => setValidationOpen(!validationOpen)} />
+            <ValidationPanel messages={validationMessages} isOpen={validationOpen} onToggle={() => togglePanel('validation')} />
           )}
 
           <ChatPanel swarmId={swarmId} isOpen={chatOpen} onToggle={() => setChatOpen(!chatOpen)} />
@@ -354,7 +361,7 @@ export function App() {
             <RelationshipOrchestrator
               swarm={swarm}
               isOpen={orchestratorOpen}
-              onToggle={() => setOrchestratorOpen(!orchestratorOpen)}
+              onToggle={() => togglePanel('orchestrator')}
               onCreateRelationship={handleConnect}
               onDeleteRelationship={handleDeleteEdge}
             />
@@ -362,26 +369,26 @@ export function App() {
         </div>
       </div>
 
-      <HealthDashboard swarmId={swarmId} isOpen={healthDashboardOpen} onClose={() => setHealthDashboardOpen(false)} />
-      <DecisionTraceViewer swarmId={swarmId} isOpen={tracesOpen} onClose={() => setTracesOpen(false)} />
-      <GovernancePanel swarmId={swarmId} isOpen={governanceOpen} onClose={() => setGovernanceOpen(false)} />
-      <CollaborationPanel swarmId={swarmId} swarm={swarm} isOpen={collaborationOpen} onClose={() => setCollaborationOpen(false)} />
-      <OptimizationPanel swarmId={swarmId} isOpen={optimizationOpen} onClose={() => setOptimizationOpen(false)} />
-          <SimulationPanel swarmId={swarmId} isOpen={simulationOpen} onToggle={() => setSimulationOpen(!simulationOpen)}
+      <HealthDashboard swarmId={swarmId} isOpen={healthDashboardOpen} onClose={() => setOpenPanel(null)} />
+      <DecisionTraceViewer swarmId={swarmId} isOpen={tracesOpen} onClose={() => setOpenPanel(null)} />
+      <GovernancePanel swarmId={swarmId} isOpen={governanceOpen} onClose={() => setOpenPanel(null)} />
+      <CollaborationPanel swarmId={swarmId} swarm={swarm} isOpen={collaborationOpen} onClose={() => setOpenPanel(null)} />
+      <OptimizationPanel swarmId={swarmId} isOpen={optimizationOpen} onClose={() => setOpenPanel(null)} />
+          <SimulationPanel swarmId={swarmId} isOpen={simulationOpen} onToggle={() => togglePanel('simulation')}
             onOpenAgent={(agentId) => {
               const agent = swarm.agents.find(a => a.id === agentId);
               if (agent) { setSelectedAgent(agent); setEditorOpen(true); }
             }}
           />
-      <DocViewer swarmId={swarmId} isOpen={docsOpen} onClose={() => setDocsOpen(false)} />
-      <KeyboardShortcutsHelp isOpen={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
+      <DocViewer swarmId={swarmId} isOpen={docsOpen} onClose={() => setOpenPanel(null)} />
+      <KeyboardShortcutsHelp isOpen={shortcutsOpen} onClose={() => setOpenPanel(null)} />
 
       {wizardOpen && swarm && (
         <AgentBuilderWizard
           layers={swarm.layers}
           existingNicknames={swarm.agents.map(a => a.nickname)}
           onCreate={handleCreateFromWizard}
-          onCancel={() => setWizardOpen(false)}
+          onCancel={() => setOpenPanel(null)}
         />
       )}
     </ReactFlowProvider>

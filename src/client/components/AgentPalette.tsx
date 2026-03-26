@@ -85,7 +85,7 @@ export function AgentPalette({ layers, onDragStart, isOpen, onToggle }: AgentPal
           borderRadius: 8,
           background: 'var(--bg-elevated)',
           border: '1px solid rgba(0, 217, 255, 0.3)',
-          color: '#00d9ff',
+          color: 'var(--text-accent)',
           cursor: 'pointer',
           display: 'flex',
           alignItems: 'center',
@@ -100,7 +100,7 @@ export function AgentPalette({ layers, onDragStart, isOpen, onToggle }: AgentPal
       {isOpen && (
         <>
           <div style={{ padding: '16px 14px 8px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-            <div style={{ fontSize: 13, color: '#00d9ff', fontWeight: 600, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 1 }}>
+            <div style={{ fontSize: 13, color: 'var(--text-accent)', fontWeight: 600, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 1 }}>
               Agent Palette
             </div>
             <input
@@ -114,12 +114,12 @@ export function AgentPalette({ layers, onDragStart, isOpen, onToggle }: AgentPal
                 borderRadius: 6,
                 border: '1px solid rgba(0, 217, 255, 0.2)',
                 background: 'rgba(0, 0, 0, 0.3)',
-                color: '#fff',
+                color: 'var(--text-primary)',
                 fontSize: 12,
                 outline: 'none',
               }}
             />
-            <div style={{ fontSize: 11, color: '#8b9dc3', marginTop: 6 }}>
+            <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 6 }}>
               Drag an agent onto the canvas
             </div>
           </div>
@@ -170,8 +170,8 @@ export function AgentPalette({ layers, onDragStart, isOpen, onToggle }: AgentPal
                         (e.currentTarget as HTMLDivElement).style.borderColor = `${color}33`;
                       }}
                     >
-                      <div style={{ fontSize: 13, color: '#fff', fontWeight: 600 }}>{template.nickname}</div>
-                      <div style={{ fontSize: 10, color: '#a0aec0', fontStyle: 'italic' }}>"{template.descriptor}"</div>
+                      <div style={{ fontSize: 13, color: 'var(--text-primary)', fontWeight: 600 }}>{template.nickname}</div>
+                      <div style={{ fontSize: 10, color: 'var(--text-secondary)', fontStyle: 'italic' }}>"{template.descriptor}"</div>
                       <div style={{ display: 'flex', gap: 3, marginTop: 4, flexWrap: 'wrap' }}>
                         {template.badges.slice(0, 3).map(b => (
                           <span key={b} style={{
@@ -179,7 +179,7 @@ export function AgentPalette({ layers, onDragStart, isOpen, onToggle }: AgentPal
                             padding: '1px 5px',
                             borderRadius: 6,
                             background: 'rgba(255,255,255,0.08)',
-                            color: '#8b9dc3',
+                            color: 'var(--text-secondary)',
                           }}>
                             {b.replace('_', ' ')}
                           </span>

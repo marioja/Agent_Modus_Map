@@ -32,10 +32,13 @@ export function useCollaboration(swarmId: string) {
   });
 
   useEffect(() => {
+    const token = getAuthToken();
+    // Don't connect WebSocket if no auth token (demo mode)
+    if (!token) return;
+
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const host = window.location.hostname;
-    const port = 3001; // API port
-    const token = getAuthToken() || '';
+    const port = 3001;
     const url = `${protocol}//${host}:${port}/ws?swarmId=${encodeURIComponent(swarmId)}&token=${token}`;
 
     const ws = new WebSocket(url);

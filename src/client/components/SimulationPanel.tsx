@@ -207,7 +207,7 @@ export function SimulationPanel({ swarmId, isOpen, onToggle, onOpenAgent }: Prop
                   <div style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: 16, marginBottom: 8 }}>Data Flow</div>
                   {simResult.dataFlow.map((flow: any, i: number) => (
                     <div key={i} style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ fontWeight: 600, color: '#00d9ff' }}>{flow.from}</span>
+                      <span style={{ fontWeight: 600, color: 'var(--text-accent)' }}>{flow.from}</span>
                       <span style={{ color: 'var(--text-tertiary)' }}>{'>'}</span>
                       <span style={{ fontWeight: 600, color: '#a855f7' }}>{flow.to}</span>
                       <span style={{ color: 'var(--text-tertiary)', fontSize: 10 }}>{flow.data.slice(0, 60)}...</span>
@@ -243,7 +243,7 @@ export function SimulationPanel({ swarmId, isOpen, onToggle, onOpenAgent }: Prop
             />
             <button onClick={handleRunLiveTest} disabled={loading} style={{
               marginTop: 8, padding: '8px 20px', borderRadius: 8, border: 'none',
-              background: '#ef4444', color: '#fff',
+              background: '#ef4444', color: 'var(--text-primary)',
               fontWeight: 600, cursor: loading ? 'default' : 'pointer', fontSize: 13,
               fontFamily: 'var(--font-primary)', opacity: loading ? 0.5 : 1,
             }}>{loading ? 'Executing...' : 'Run Live Test'}</button>
@@ -380,7 +380,7 @@ export function SimulationPanel({ swarmId, isOpen, onToggle, onOpenAgent }: Prop
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
                     <div>
-                      <div style={{ fontSize: 28, fontWeight: 800, color: '#00d9ff' }}>${costResult.totalMonthlyCost}</div>
+                      <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--text-accent)' }}>${costResult.totalMonthlyCost}</div>
                       <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>Estimated Monthly</div>
                     </div>
                     <div style={{ textAlign: 'right' }}>
@@ -435,7 +435,7 @@ export function SimulationPanel({ swarmId, isOpen, onToggle, onOpenAgent }: Prop
 
             <button onClick={handleExportPackage} disabled={loading} style={{
               padding: '10px 24px', borderRadius: 8, border: 'none',
-              background: '#22c55e', color: '#fff',
+              background: '#22c55e', color: 'var(--text-primary)',
               fontWeight: 600, cursor: loading ? 'default' : 'pointer', fontSize: 13,
               fontFamily: 'var(--font-primary)', opacity: loading ? 0.5 : 1,
               width: '100%',
@@ -613,7 +613,7 @@ function DiagnosticsSection({ steps, onOpenAgent }: { steps: any[]; onOpenAgent?
   const severityColors = {
     error: { bg: 'rgba(239,68,68,0.08)', border: '#ef4444', color: '#f87171' },
     warning: { bg: 'rgba(251,191,36,0.08)', border: '#fbbf24', color: '#fbbf24' },
-    tip: { bg: 'rgba(0,217,255,0.06)', border: '#00d9ff', color: '#00d9ff' },
+    tip: { bg: 'rgba(0,217,255,0.06)', border: '#00d9ff', color: 'var(--text-accent)' },
   };
 
   return (

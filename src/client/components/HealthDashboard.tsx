@@ -6,7 +6,7 @@ const statusConfig: Record<string, { color: string; bg: string; label: string }>
   healthy: { color: '#22c55e', bg: 'rgba(34, 197, 94, 0.15)', label: 'Healthy' },
   degraded: { color: '#fbbf24', bg: 'rgba(251, 191, 36, 0.15)', label: 'Degraded' },
   unhealthy: { color: '#ef4444', bg: 'rgba(239, 68, 68, 0.15)', label: 'Unhealthy' },
-  unknown: { color: '#64748b', bg: 'rgba(107, 114, 128, 0.15)', label: 'Unknown' },
+  unknown: { color: 'var(--text-tertiary)', bg: 'rgba(107, 114, 128, 0.15)', label: 'Unknown' },
 };
 
 interface HealthDashboardProps {
@@ -64,7 +64,7 @@ export function HealthDashboard({ swarmId, isOpen, onClose }: HealthDashboardPro
     }} onClick={onClose}>
       <div style={{
         background: 'var(--bg-elevated)',
-        border: '1px solid rgba(0, 217, 255, 0.3)',
+        border: '1px solid var(--border-accent)',
         borderRadius: 20,
         padding: 24,
         width: 900,
@@ -74,7 +74,7 @@ export function HealthDashboard({ swarmId, isOpen, onClose }: HealthDashboardPro
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
           <div>
-            <h2 style={{ color: '#00d9ff', fontSize: 20, margin: 0 }}>Health Dashboard</h2>
+            <h2 style={{ color: 'var(--text-accent)', fontSize: 20, margin: 0 }}>Health Dashboard</h2>
             <div style={{ display: 'flex', gap: 16, marginTop: 8 }}>
               {Object.entries(counts).filter(([, c]) => c > 0).map(([status, count]) => {
                 const cfg = statusConfig[status];
@@ -89,18 +89,18 @@ export function HealthDashboard({ swarmId, isOpen, onClose }: HealthDashboardPro
           <div style={{ display: 'flex', gap: 8 }}>
             <button onClick={handleSimulate} style={{
               padding: '6px 14px', borderRadius: 8, border: '1px solid rgba(0,217,255,0.3)',
-              background: 'rgba(0,217,255,0.08)', color: '#00d9ff', cursor: 'pointer', fontSize: 12,
+              background: 'rgba(0,217,255,0.08)', color: 'var(--text-accent)', cursor: 'pointer', fontSize: 12,
             }}>
               Simulate Tick
             </button>
             <button onClick={onClose} style={{
-              background: 'none', border: 'none', color: '#8b9dc3', cursor: 'pointer', fontSize: 20,
+              background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: 20,
             }}>{'\u00D7'}</button>
           </div>
         </div>
 
         {loading ? (
-          <div style={{ textAlign: 'center', color: '#8b9dc3', padding: 40 }}>Loading health data...</div>
+          <div style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: 40 }}>Loading health data...</div>
         ) : (
           <>
             {/* Health Grid */}
@@ -125,7 +125,7 @@ export function HealthDashboard({ swarmId, isOpen, onClose }: HealthDashboardPro
                     }}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                      <span style={{ fontSize: 15, fontWeight: 600, color: '#fff' }}>{agent.nickname}</span>
+                      <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' }}>{agent.nickname}</span>
                       <span style={{
                         width: 10, height: 10, borderRadius: '50%',
                         background: cfg.color,
@@ -133,7 +133,7 @@ export function HealthDashboard({ swarmId, isOpen, onClose }: HealthDashboardPro
                       }} />
                     </div>
 
-                    <div style={{ fontSize: 11, color: '#8b9dc3', marginBottom: 8 }}>
+                    <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 8 }}>
                       {agent.latencyP95 > 0 ? `${agent.latencyP95}ms p95` : 'No data'} | {agent.throughput > 0 ? `${agent.throughput} req/m` : ''}
                     </div>
 
@@ -157,10 +157,10 @@ export function HealthDashboard({ swarmId, isOpen, onClose }: HealthDashboardPro
                 marginTop: 16,
                 padding: 18,
                 borderRadius: 14,
-                background: 'rgba(0, 0, 0, 0.3)',
-                border: '1px solid rgba(255,255,255,0.08)',
+                background: 'var(--bg-elevated)',
+                border: '1px solid var(--border-subtle)',
               }}>
-                <h3 style={{ color: '#fff', fontSize: 16, margin: '0 0 12px' }}>
+                <h3 style={{ color: 'var(--text-primary)', fontSize: 16, margin: '0 0 12px' }}>
                   {selectedDetail.nickname} Details
                 </h3>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
@@ -173,7 +173,7 @@ export function HealthDashboard({ swarmId, isOpen, onClose }: HealthDashboardPro
                   <MetricCard label="CPU" value={`${selectedDetail.cpuPercent}%`}
                     history={[]} color="#fbbf24" />
                 </div>
-                <div style={{ fontSize: 11, color: '#64748b', marginTop: 8 }}>
+                <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 8 }}>
                   Memory: {selectedDetail.memoryMb}MB | Last report: {selectedDetail.lastReportAt ? new Date(selectedDetail.lastReportAt).toLocaleTimeString() : 'Never'}
                 </div>
               </div>
@@ -191,10 +191,10 @@ function MetricCard({ label, value, history, color }: { label: string; value: st
       padding: 12,
       borderRadius: 10,
       background: 'rgba(255,255,255,0.03)',
-      border: '1px solid rgba(255,255,255,0.06)',
+      border: '1px solid var(--border-subtle)',
     }}>
-      <div style={{ fontSize: 10, color: '#8b9dc3', textTransform: 'uppercase', marginBottom: 4 }}>{label}</div>
-      <div style={{ fontSize: 18, fontWeight: 700, color: '#fff', marginBottom: 6 }}>{value}</div>
+      <div style={{ fontSize: 10, color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: 4 }}>{label}</div>
+      <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 6 }}>{value}</div>
       {history.length > 1 && (
         <Sparkline data={history} color={color} fillColor={color} width={150} height={30} />
       )}

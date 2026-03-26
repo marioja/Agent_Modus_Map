@@ -84,17 +84,17 @@ export function TemplateBrowser({ isOpen, onClose, onSwarmCreated }: TemplateBro
     }} onClick={onClose}>
       <div style={{
         background: 'var(--bg-elevated)',
-        border: '2px solid rgba(0, 217, 255, 0.3)',
+        border: '2px solid var(--border-accent)',
         borderRadius: 20,
         padding: 30,
         width: 640,
         maxHeight: '80vh',
         overflowY: 'auto',
       }} onClick={e => e.stopPropagation()}>
-        <h2 style={{ color: '#00d9ff', fontSize: 22, marginBottom: 8, textAlign: 'center' }}>
+        <h2 style={{ color: 'var(--text-accent)', fontSize: 22, marginBottom: 8, textAlign: 'center' }}>
           {mode === 'choose' ? 'Create a Swarm' : mode === 'blank' ? 'Start from Scratch' : mode === 'existing' ? 'Open Existing' : 'Start from Template'}
         </h2>
-        <p style={{ color: '#8b9dc3', fontSize: 13, textAlign: 'center', marginBottom: 24 }}>
+        <p style={{ color: 'var(--text-secondary)', fontSize: 13, textAlign: 'center', marginBottom: 24 }}>
           {mode === 'choose' ? 'Design from scratch, use a template, or open an existing swarm.' :
            mode === 'blank' ? 'Name your swarm and start with a blank canvas.' :
            mode === 'existing' ? 'Switch to a swarm you already created.' :
@@ -103,7 +103,7 @@ export function TemplateBrowser({ isOpen, onClose, onSwarmCreated }: TemplateBro
 
         {mode !== 'choose' && (
           <button onClick={() => setMode('choose')} style={{
-            background: 'none', border: 'none', color: '#00d9ff', cursor: 'pointer',
+            background: 'none', border: 'none', color: 'var(--text-accent)', cursor: 'pointer',
             fontSize: 12, marginBottom: 16, padding: 0,
           }}>Back to options</button>
         )}
@@ -115,7 +115,7 @@ export function TemplateBrowser({ isOpen, onClose, onSwarmCreated }: TemplateBro
               padding: 20, borderRadius: 14, border: '2px solid rgba(0,217,255,0.3)',
               background: 'rgba(0,217,255,0.05)', cursor: 'pointer', transition: 'all 0.2s',
             }}>
-              <div style={{ fontSize: 18, fontWeight: 600, color: '#00d9ff' }}>Start from Scratch</div>
+              <div style={{ fontSize: 18, fontWeight: 600, color: 'var(--text-accent)' }}>Start from Scratch</div>
               <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 6 }}>
                 Blank canvas with 4 default layers. Add agents and connections as you design.
               </div>
@@ -158,7 +158,7 @@ export function TemplateBrowser({ isOpen, onClose, onSwarmCreated }: TemplateBro
         {/* Blank canvas mode */}
         {mode === 'blank' && (
           <div style={{ padding: 16, background: 'rgba(0,217,255,0.05)', borderRadius: 12 }}>
-            <label style={{ fontSize: 12, color: '#8b9dc3', display: 'block', marginBottom: 6 }}>
+            <label style={{ fontSize: 12, color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>
               Name your swarm
             </label>
             <input
@@ -169,10 +169,10 @@ export function TemplateBrowser({ isOpen, onClose, onSwarmCreated }: TemplateBro
               style={{
                 width: '100%', padding: '10px 14px', borderRadius: 8,
                 border: '1px solid rgba(0,217,255,0.3)', background: 'rgba(0,0,0,0.3)',
-                color: '#fff', fontSize: 14, outline: 'none', boxSizing: 'border-box',
+                color: 'var(--text-primary)', fontSize: 14, outline: 'none', boxSizing: 'border-box',
               }}
             />
-            <div style={{ color: '#64748b', fontSize: 12, marginTop: 8 }}>
+            <div style={{ color: 'var(--text-tertiary)', fontSize: 12, marginTop: 8 }}>
               You'll get 4 default layers: Interface, Processing, Intelligence, Operations. You can customize them later.
             </div>
             <button
@@ -180,7 +180,7 @@ export function TemplateBrowser({ isOpen, onClose, onSwarmCreated }: TemplateBro
               disabled={creating || !swarmName.trim()}
               style={{
                 width: '100%', marginTop: 12, padding: '12px', borderRadius: 10,
-                border: 'none', background: '#00d9ff', color: 'var(--text-inverse)',
+                border: 'none', background: 'var(--accent-primary)', color: 'var(--text-inverse)',
                 fontWeight: 700, fontSize: 15, cursor: creating ? 'default' : 'pointer',
                 opacity: creating || !swarmName.trim() ? 0.5 : 1,
               }}
@@ -195,12 +195,12 @@ export function TemplateBrowser({ isOpen, onClose, onSwarmCreated }: TemplateBro
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {existingSwarms.map(s => (
               <div key={s.id} onClick={() => { onSwarmCreated(s.id); onClose(); }} style={{
-                padding: 14, borderRadius: 10, border: '1px solid rgba(255,255,255,0.08)',
+                padding: 14, borderRadius: 10, border: '1px solid var(--border-subtle)',
                 background: 'rgba(255,255,255,0.03)', cursor: 'pointer', transition: 'all 0.2s',
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ fontSize: 15, fontWeight: 600, color: '#fff' }}>{s.name}</div>
-                  <div style={{ fontSize: 12, color: '#64748b' }}>{s.agents.length} agents</div>
+                  <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' }}>{s.name}</div>
+                  <div style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>{s.agents.length} agents</div>
                 </div>
                 {s.description && <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 4 }}>{s.description.slice(0, 100)}</div>}
               </div>
@@ -217,20 +217,20 @@ export function TemplateBrowser({ isOpen, onClose, onSwarmCreated }: TemplateBro
                 Columns: Nickname, Emoji, Formal Name, Descriptor, Layer, Badges, Core Task, Inputs, Outputs, Depends On, Feeds Into, Collaborates With, Can Override
                 <br />Use semicolons (;) to separate multiple values within a cell.
               </div>
-              <a href={getCSVTemplateUrl()} download style={{ color: '#00d9ff', fontSize: 12, fontWeight: 600, marginTop: 8, display: 'inline-block' }}>
+              <a href={getCSVTemplateUrl()} download style={{ color: 'var(--text-accent)', fontSize: 12, fontWeight: 600, marginTop: 8, display: 'inline-block' }}>
                 Download CSV Template
               </a>
             </div>
-            <label style={{ fontSize: 12, color: '#8b9dc3', display: 'block', marginBottom: 6 }}>Swarm Name</label>
+            <label style={{ fontSize: 12, color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>Swarm Name</label>
             <input value={swarmName} onChange={e => setSwarmName(e.target.value)} placeholder="My Imported Swarm"
-              style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid rgba(0,217,255,0.3)', background: 'rgba(0,0,0,0.3)', color: '#fff', fontSize: 14, outline: 'none', marginBottom: 12, boxSizing: 'border-box' }} />
+              style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid rgba(0,217,255,0.3)', background: 'rgba(0,0,0,0.3)', color: 'var(--text-primary)', fontSize: 14, outline: 'none', marginBottom: 12, boxSizing: 'border-box' }} />
             <div style={{
               border: '2px dashed rgba(251,191,36,0.4)', borderRadius: 12, padding: '40px 20px',
               textAlign: 'center', cursor: 'pointer', transition: 'all 0.3s',
             }} onClick={() => document.getElementById('csvFileInput')?.click()}>
               <div style={{ fontSize: 36, marginBottom: 10 }}>📤</div>
               <div style={{ color: 'var(--text-secondary)', fontSize: 14 }}>Click to upload CSV file</div>
-              <div style={{ color: '#64748b', fontSize: 12, marginTop: 6 }}>or paste CSV data below</div>
+              <div style={{ color: 'var(--text-tertiary)', fontSize: 12, marginTop: 6 }}>or paste CSV data below</div>
             </div>
             <input type="file" id="csvFileInput" accept=".csv" style={{ display: 'none' }} onChange={async (e) => {
               const file = e.target.files?.[0];
@@ -246,7 +246,7 @@ export function TemplateBrowser({ isOpen, onClose, onSwarmCreated }: TemplateBro
             <textarea placeholder="Or paste CSV data here..." style={{
               width: '100%', minHeight: 100, marginTop: 12, padding: '10px 14px', borderRadius: 8,
               border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(0,0,0,0.3)',
-              color: '#fff', fontSize: 12, fontFamily: 'monospace', outline: 'none', resize: 'vertical', boxSizing: 'border-box',
+              color: 'var(--text-primary)', fontSize: 12, fontFamily: 'monospace', outline: 'none', resize: 'vertical', boxSizing: 'border-box',
             }} id="csvPasteArea" />
             <button onClick={async () => {
               const text = (document.getElementById('csvPasteArea') as HTMLTextAreaElement)?.value;
@@ -283,7 +283,7 @@ export function TemplateBrowser({ isOpen, onClose, onSwarmCreated }: TemplateBro
                 style={{
                   padding: 18,
                   borderRadius: 14,
-                  border: `2px solid ${isSelected ? color : 'rgba(255,255,255,0.08)'}`,
+                  border: `2px solid ${isSelected ? color : 'var(--border-subtle)'}`,
                   background: isSelected ? `${color}10` : 'rgba(255, 255, 255, 0.03)',
                   cursor: 'pointer',
                   transition: 'all 0.2s',
@@ -291,22 +291,22 @@ export function TemplateBrowser({ isOpen, onClose, onSwarmCreated }: TemplateBro
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <div>
-                    <div style={{ fontSize: 18, fontWeight: 600, color: '#fff' }}>{template.name}</div>
+                    <div style={{ fontSize: 18, fontWeight: 600, color: 'var(--text-primary)' }}>{template.name}</div>
                     <div style={{ fontSize: 12, color, marginTop: 2 }}>{template.domain}</div>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: 12, color: '#8b9dc3' }}>{template.agentCount} agents</div>
-                    <div style={{ fontSize: 12, color: '#8b9dc3' }}>{template.layerCount} layers</div>
+                    <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{template.agentCount} agents</div>
+                    <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{template.layerCount} layers</div>
                   </div>
                 </div>
-                <div style={{ fontSize: 13, color: '#a0aec0', marginTop: 8, lineHeight: 1.4 }}>
+                <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 8, lineHeight: 1.4 }}>
                   {template.description}
                 </div>
                 <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
                   {template.tags.map(tag => (
                     <span key={tag} style={{
                       fontSize: 10, padding: '2px 8px', borderRadius: 8,
-                      background: 'rgba(255,255,255,0.06)', color: '#8b9dc3',
+                      background: 'var(--border-subtle)', color: 'var(--text-secondary)',
                     }}>
                       {tag}
                     </span>
@@ -319,7 +319,7 @@ export function TemplateBrowser({ isOpen, onClose, onSwarmCreated }: TemplateBro
 
         {mode === 'template' && selectedTemplate && (
           <div style={{ marginTop: 20, padding: 16, background: 'rgba(0,217,255,0.05)', borderRadius: 12 }}>
-            <label style={{ fontSize: 12, color: '#8b9dc3', display: 'block', marginBottom: 6 }}>
+            <label style={{ fontSize: 12, color: 'var(--text-secondary)', display: 'block', marginBottom: 6 }}>
               Name your swarm
             </label>
             <input
@@ -329,9 +329,9 @@ export function TemplateBrowser({ isOpen, onClose, onSwarmCreated }: TemplateBro
                 width: '100%',
                 padding: '10px 14px',
                 borderRadius: 8,
-                border: '1px solid rgba(0, 217, 255, 0.3)',
-                background: 'rgba(0, 0, 0, 0.3)',
-                color: '#fff',
+                border: '1px solid var(--border-accent)',
+                background: 'var(--bg-elevated)',
+                color: 'var(--text-primary)',
                 fontSize: 14,
                 outline: 'none',
               }}
@@ -345,7 +345,7 @@ export function TemplateBrowser({ isOpen, onClose, onSwarmCreated }: TemplateBro
                 padding: '12px',
                 borderRadius: 10,
                 border: 'none',
-                background: '#00d9ff',
+                background: 'var(--accent-primary)',
                 color: 'var(--text-inverse)',
                 fontWeight: 700,
                 fontSize: 15,
@@ -367,7 +367,7 @@ export function TemplateBrowser({ isOpen, onClose, onSwarmCreated }: TemplateBro
             borderRadius: 8,
             border: '1px solid rgba(255,255,255,0.15)',
             background: 'transparent',
-            color: '#8b9dc3',
+            color: 'var(--text-secondary)',
             cursor: 'pointer',
             fontSize: 13,
           }}

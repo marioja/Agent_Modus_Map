@@ -61,7 +61,7 @@ export function OnboardingOverlay({ onDismiss }: Props) {
         <p style={{ color: 'var(--text-secondary)', fontSize: 14, lineHeight: 1.7, margin: '0 0 16px' }}>
           {current.content}
         </p>
-        <p style={{ color: '#00d9ff', fontSize: 13, fontStyle: 'italic', margin: '0 0 24px' }}>
+        <p style={{ color: 'var(--text-accent)', fontSize: 13, fontStyle: 'italic', margin: '0 0 24px' }}>
           {current.highlight}
         </p>
 
@@ -75,18 +75,18 @@ export function OnboardingOverlay({ onDismiss }: Props) {
           {step < STEPS.length - 1 ? (
             <button onClick={() => setStep(step + 1)} style={{
               padding: '10px 24px', borderRadius: 8, border: 'none',
-              background: '#00d9ff', color: 'var(--text-inverse)', cursor: 'pointer', fontSize: 14, fontWeight: 600,
+              background: 'var(--accent-primary)', color: 'var(--text-inverse)', cursor: 'pointer', fontSize: 14, fontWeight: 600,
             }}>Next</button>
           ) : (
             <button onClick={onDismiss} style={{
               padding: '10px 24px', borderRadius: 8, border: 'none',
-              background: '#00d9ff', color: 'var(--text-inverse)', cursor: 'pointer', fontSize: 14, fontWeight: 600,
+              background: 'var(--accent-primary)', color: 'var(--text-inverse)', cursor: 'pointer', fontSize: 14, fontWeight: 600,
             }}>Start Designing</button>
           )}
           {step < STEPS.length - 1 && (
             <button onClick={onDismiss} style={{
               padding: '10px 16px', borderRadius: 8, border: 'none',
-              background: 'transparent', color: '#64748b', cursor: 'pointer', fontSize: 13,
+              background: 'transparent', color: 'var(--text-tertiary)', cursor: 'pointer', fontSize: 13,
             }}>Skip</button>
           )}
         </div>
