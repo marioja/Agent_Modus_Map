@@ -1,6 +1,16 @@
 import React, { useState } from 'react';
 import { runSimulation, getSwarmCostEstimate, runLiveTestStreaming, getSwarmPackage } from '../api.js';
 
+function linkifyText(text: string): string {
+  // Escape HTML first to prevent XSS
+  const escaped = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  // Make URLs clickable
+  return escaped.replace(
+    /(https?:\/\/[^\s)<>,]+)/g,
+    '<a href="$1" target="_blank" rel="noopener" style="color: var(--accent-primary); text-decoration: underline;">$1</a>'
+  );
+}
+
 interface Props {
   swarmId: string;
   isOpen: boolean;
@@ -98,6 +108,78 @@ export function SimulationPanel({ swarmId, isOpen, onToggle, onOpenAgent }: Prop
       if (step.downstreamAgents?.length) lines.push(`> Passes to: ${step.downstreamAgents.join(', ')}`);
       lines.push('');
     }
+    navigator.clipboard.writeText(lines.join('\n'));
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  function downloadReport(result: any) {
+    if (!result) return;
+    const lines: string[] = [];
+    lines.push('# Swarm Test Report');
+    lines.push(`**Date:** ${new Date().toLocaleDateString()}`);
+    lines.push(`**Duration:** ${(result.totalDurationMs / 1000).toFixed(1)}s | **Cost:** $${result.totalCost || '0'} | **Tokens:** ${((result.totalInputTokens || 0) + (result.totalOutputTokens || 0)).toLocaleString()}`);
+    lines.push('');
+    lines.push('---');
+    lines.push('');
+    for (const step of result.steps || []) {
+      lines.push(`## ${step.nickname}`);
+      lines.push(`**Status:** ${step.status} | **Duration:** ${step.durationMs}ms | **Cost:** $${step.cost || '0'}`);
+      lines.push('');
+      lines.push(step.output || step.error || '(no output)');
+      lines.push('');
+      if (step.downstreamAgents?.length) lines.push(`*Passes to: ${step.downstreamAgents.join(', ')}*`);
+      lines.push('');
+      lines.push('---');
+      lines.push('');
+    }
+    const blob = new Blob([lines.join('\n')], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `swarm-report-${new Date().toISOString().split('T')[0]}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function copyLeadSheet(result: any) {
+    if (!result) return;
+    // Extract company names, URLs, contacts from Scout and Profile outputs
+    const scoutStep = result.steps?.find((s: any) => s.nickname === 'Scout');
+    const profileStep = result.steps?.find((s: any) => s.nickname === 'Profile');
+    const qualifyStep = result.steps?.find((s: any) => s.nickname === 'Qualify');
+    const combined = [scoutStep?.output, profileStep?.output, qualifyStep?.output].filter(Boolean).join('\n');
+
+    // Extract URLs
+    const urls = combined.match(/https?:\/\/[^\s)>\]|,]+/g) || [];
+    // Extract emails
+    const emails = combined.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g) || [];
+    // Extract phone numbers
+    const phones = combined.match(/\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/g) || [];
+
+    const lines: string[] = [];
+    lines.push('Company\tWebsite\tContact\tPhone\tEmail\tScore\tNotes');
+    lines.push('---\t---\t---\t---\t---\t---\t---');
+
+    // Try to extract structured data from Scout's output (look for table rows or numbered items)
+    const scoutText = scoutStep?.output || '';
+    const companyMatches = scoutText.match(/\*\*\d+\.\s+([^|*]+)/g) || [];
+    for (const match of companyMatches) {
+      const name = match.replace(/\*\*\d+\.\s+/, '').replace(/\*\*/g, '').trim();
+      const urlForCompany = urls.find(u => u.toLowerCase().includes(name.split(/\s/)[0].toLowerCase())) || '';
+      lines.push(`${name}\t${urlForCompany}\t\t${phones[0] || ''}\t${emails[0] || ''}\t\t`);
+    }
+
+    if (companyMatches.length === 0) {
+      lines.push('(Could not auto-extract companies. See full report for details.)');
+    }
+
+    lines.push('');
+    lines.push('All URLs found:');
+    for (const url of [...new Set(urls)]) lines.push(url);
+    if (emails.length) { lines.push(''); lines.push('Emails found:'); for (const e of [...new Set(emails)]) lines.push(e); }
+    if (phones.length) { lines.push(''); lines.push('Phones found:'); for (const p of [...new Set(phones)]) lines.push(p); }
+
     navigator.clipboard.writeText(lines.join('\n'));
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -298,11 +380,23 @@ export function SimulationPanel({ swarmId, isOpen, onToggle, onOpenAgent }: Prop
                   Status: {liveResult.status.toUpperCase()}
                 </div>
 
-                <button onClick={() => copyResults(liveResult, 'live')} style={{
-                  marginBottom: 12, padding: '6px 14px', borderRadius: 6, border: '1px solid var(--border-default)',
-                  background: 'transparent', color: 'var(--accent-primary)', fontSize: 11, fontWeight: 600,
-                  cursor: 'pointer', fontFamily: 'var(--font-primary)', width: '100%',
-                }}>{copied ? 'Copied!' : 'Copy All Results'}</button>
+                <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
+                  <button onClick={() => copyResults(liveResult, 'live')} style={{
+                    flex: 1, padding: '6px 10px', borderRadius: 6, border: '1px solid var(--border-default)',
+                    background: 'transparent', color: 'var(--accent-primary)', fontSize: 11, fontWeight: 600,
+                    cursor: 'pointer', fontFamily: 'var(--font-primary)',
+                  }}>{copied ? 'Copied!' : 'Copy All'}</button>
+                  <button onClick={() => copyLeadSheet(liveResult)} style={{
+                    flex: 1, padding: '6px 10px', borderRadius: 6, border: '1px solid var(--accent-secondary, #a855f7)',
+                    background: 'transparent', color: 'var(--accent-secondary, #a855f7)', fontSize: 11, fontWeight: 600,
+                    cursor: 'pointer', fontFamily: 'var(--font-primary)',
+                  }}>Copy Leads</button>
+                  <button onClick={() => downloadReport(liveResult)} style={{
+                    flex: 1, padding: '6px 10px', borderRadius: 6, border: '1px solid var(--border-default)',
+                    background: 'transparent', color: 'var(--text-secondary)', fontSize: 11, fontWeight: 600,
+                    cursor: 'pointer', fontFamily: 'var(--font-primary)',
+                  }}>Download</button>
+                </div>
 
                 <div style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Agent Responses</div>
                 {liveResult.steps.map((step: any, i: number) => (
@@ -326,11 +420,11 @@ export function SimulationPanel({ swarmId, isOpen, onToggle, onOpenAgent }: Prop
                     ) : (
                       <div style={{
                         fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.6,
-                        maxHeight: 150, overflowY: 'auto', whiteSpace: 'pre-wrap',
+                        maxHeight: 200, overflowY: 'auto', whiteSpace: 'pre-wrap',
                         padding: '8px 10px', borderRadius: 6, background: 'var(--bg-elevated)',
-                      }}>
-                        {step.output}
-                      </div>
+                      }}
+                        dangerouslySetInnerHTML={{ __html: linkifyText(step.output || '') }}
+                      />
                     )}
                     {step.downstreamAgents.length > 0 && (
                       <div style={{ fontSize: 10, color: 'var(--text-tertiary)', marginTop: 4 }}>
