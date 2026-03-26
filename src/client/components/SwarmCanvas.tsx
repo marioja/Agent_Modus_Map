@@ -230,10 +230,10 @@ export function SwarmCanvas({
     setPendingConnection(null);
   }, [pendingConnection, onConnect]);
 
+  const [edgeToDelete, setEdgeToDelete] = React.useState<string | null>(null);
+
   const handleEdgeClick = useCallback((_event: React.MouseEvent, edge: Edge) => {
-    if (onDeleteEdge && window.confirm('Delete this relationship?')) {
-      onDeleteEdge(edge.id);
-    }
+    if (onDeleteEdge) setEdgeToDelete(edge.id);
   }, [onDeleteEdge]);
 
   const handleDragOver = useCallback((event: DragEvent) => {
@@ -288,6 +288,19 @@ export function SwarmCanvas({
           onSelect={handleConnectionTypeSelect}
           onCancel={() => setPendingConnection(null)}
         />
+      )}
+
+      {edgeToDelete && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-xl)', padding: 'var(--space-6)', width: 360, boxShadow: '0 20px 60px rgba(0,0,0,0.4)' }}>
+            <div style={{ fontSize: 'var(--text-lg)', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 'var(--space-3)' }}>Remove this connection?</div>
+            <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', marginBottom: 'var(--space-5)', lineHeight: 1.5 }}>This will disconnect these two agents. You can reconnect them later.</div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-3)' }}>
+              <button onClick={() => setEdgeToDelete(null)} style={{ padding: 'var(--space-2) var(--space-4)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-default)', background: 'transparent', color: 'var(--text-secondary)', cursor: 'pointer', fontFamily: 'var(--font-primary)', fontSize: 'var(--text-sm)' }}>Cancel</button>
+              <button onClick={() => { onDeleteEdge?.(edgeToDelete); setEdgeToDelete(null); }} style={{ padding: 'var(--space-2) var(--space-4)', borderRadius: 'var(--radius-md)', border: 'none', background: 'var(--status-error-strong, #dc2626)', color: '#fff', cursor: 'pointer', fontFamily: 'var(--font-primary)', fontSize: 'var(--text-sm)', fontWeight: 600 }}>Remove</button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

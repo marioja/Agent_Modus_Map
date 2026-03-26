@@ -653,25 +653,25 @@ const DeployTab = React.memo(function DeployTab({ swarmId, query, onQueryChange 
   const [deployStatus, setDeployStatus] = useState<any>(null);
   const [results, setResults] = useState<any[]>([]);
   const [deploying, setDeploying] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [copiedBtn, setCopiedBtn] = useState<string | null>(null);
   const queryPrefilledRef = useRef(false);
 
   function copyResults(result: any, type: 'mock' | 'live') {
     doCopyResults(result, type);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setCopiedBtn('all');
+    setTimeout(() => setCopiedBtn(null), 2000);
   }
 
   function copyLeadSheet(result: any) {
     doCopyLeadSheet(result);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setCopiedBtn('leads');
+    setTimeout(() => setCopiedBtn(null), 2000);
   }
 
   function downloadReport(result: any) {
     doDownloadReport(result);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setCopiedBtn('download');
+    setTimeout(() => setCopiedBtn(null), 2000);
   }
 
   const refreshStatus = useCallback(async () => {
@@ -696,15 +696,18 @@ const DeployTab = React.memo(function DeployTab({ swarmId, query, onQueryChange 
     return () => clearInterval(interval);
   }, [deployStatus?.status, refreshStatus]);
 
+  const [showConfirm, setShowConfirm] = useState(false);
+
   async function handleDeploy() {
     if (!query.trim()) return;
+    setShowConfirm(false);
     setDeploying(true);
     try {
       const result = await apiDeploySwarm(swarmId, query.trim(), schedule, budget ? Number(budget) : undefined);
       setDeployStatus(result);
       setTimeout(refreshStatus, 3000); // refresh after first run likely completes
     } catch (err: any) {
-      alert('Deploy failed: ' + err.message);
+      setDeployStatus({ status: 'error', error: err.message, runCount: 0, totalCost: 0, budgetLimit: null } as any);
     } finally { setDeploying(false); }
   }
 
@@ -790,13 +793,33 @@ const DeployTab = React.memo(function DeployTab({ swarmId, query, onQueryChange 
             </div>
           </div>
 
-          <button onClick={handleDeploy} disabled={deploying || !query.trim()} style={{
+          <button onClick={() => setShowConfirm(true)} disabled={deploying || !query.trim()} style={{
             marginTop: 16, padding: '12px 24px', borderRadius: 8, border: 'none',
             background: '#22c55e', color: '#fff', fontWeight: 700, fontSize: 14,
             cursor: deploying || !query.trim() ? 'default' : 'pointer',
             fontFamily: 'var(--font-primary)', opacity: deploying || !query.trim() ? 0.4 : 1,
             width: '100%',
           }}>{deploying ? 'Deploying...' : 'Deploy Swarm'}</button>
+
+          {showConfirm && (
+            <div style={{
+              marginTop: 12, padding: '14px 16px', borderRadius: 8,
+              background: 'var(--status-warn-bg, rgba(245,158,11,0.1))',
+              border: '1px solid var(--status-warn-strong, #d97706)',
+            }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 6 }}>
+                This will use API credits
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 12, lineHeight: 1.5 }}>
+                Each run costs approximately $0.03-0.05. Your budget limit is set to ${budget || '1.00'}.
+                {schedule !== 'once' && ` It will run ${schedule} until you stop it or the budget is reached.`}
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={() => setShowConfirm(false)} style={{ flex: 1, padding: '8px', borderRadius: 6, border: '1px solid var(--border-default)', background: 'transparent', color: 'var(--text-secondary)', cursor: 'pointer', fontFamily: 'var(--font-primary)', fontSize: 12 }}>Cancel</button>
+                <button onClick={handleDeploy} style={{ flex: 1, padding: '8px', borderRadius: 6, border: 'none', background: '#22c55e', color: '#fff', cursor: 'pointer', fontFamily: 'var(--font-primary)', fontSize: 12, fontWeight: 600 }}>Confirm Deploy</button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -826,9 +849,9 @@ const DeployTab = React.memo(function DeployTab({ swarmId, query, onQueryChange 
               </summary>
               <div style={{ padding: '0 14px 14px', maxHeight: 400, overflowY: 'auto' }}>
                 <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
-                  <button onClick={() => { const r = { steps: run.steps, totalDurationMs: run.durationMs, totalCost: run.cost, totalInputTokens: run.totalTokens, totalOutputTokens: 0, status: run.status }; downloadReport(r); }} style={{ ...ctrlBtn, flex: 1 }}>{copied ? 'Downloaded!' : 'Download'}</button>
-                  <button onClick={() => { const r = { steps: run.steps }; copyLeadSheet(r); }} style={{ ...ctrlBtn, flex: 1, color: 'var(--accent-secondary, #a855f7)', borderColor: 'var(--accent-secondary, #a855f7)' }}>{copied ? 'Copied!' : 'Copy Leads'}</button>
-                  <button onClick={() => { const r = { steps: run.steps, totalDurationMs: run.durationMs, totalCost: run.cost, totalInputTokens: run.totalTokens, totalOutputTokens: 0, agentsProcessed: run.agentsProcessed, status: run.status }; copyResults(r, 'live'); }} style={{ ...ctrlBtn, flex: 1 }}>{copied ? 'Copied!' : 'Copy All'}</button>
+                  <button onClick={() => { const r = { steps: run.steps, totalDurationMs: run.durationMs, totalCost: run.cost, totalInputTokens: run.totalTokens, totalOutputTokens: 0, status: run.status }; downloadReport(r); }} style={{ ...ctrlBtn, flex: 1 }}>{copiedBtn === 'download' ? 'Downloaded!' : 'Download'}</button>
+                  <button onClick={() => { const r = { steps: run.steps }; copyLeadSheet(r); }} style={{ ...ctrlBtn, flex: 1, color: 'var(--accent-secondary, #a855f7)', borderColor: 'var(--accent-secondary, #a855f7)' }}>{copiedBtn === 'leads' ? 'Copied!' : 'Copy Leads'}</button>
+                  <button onClick={() => { const r = { steps: run.steps, totalDurationMs: run.durationMs, totalCost: run.cost, totalInputTokens: run.totalTokens, totalOutputTokens: 0, agentsProcessed: run.agentsProcessed, status: run.status }; copyResults(r, 'live'); }} style={{ ...ctrlBtn, flex: 1 }}>{copiedBtn === 'all' ? 'Copied!' : 'Copy All'}</button>
                 </div>
                 {run.error && <div style={{ color: '#ef4444', fontSize: 12, marginBottom: 8 }}>{run.error}</div>}
                 {(run.steps || []).map((step: any, j: number) => (
