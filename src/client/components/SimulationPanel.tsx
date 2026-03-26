@@ -222,14 +222,17 @@ export function SimulationPanel({ swarmId, isOpen, onToggle, onOpenAgent, defaul
   if (!isOpen) return null;
 
   return (
-    <><div style={{
-      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 999,
-    }} onClick={onToggle} />
+    <div style={{ position: 'fixed', inset: 0, zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+      onClick={(e) => { if (e.target === e.currentTarget) onToggle(); }}
+      onMouseDown={(e) => e.stopPropagation()}
+      onPointerDown={(e) => e.stopPropagation()}
+    >
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)' }} />
     <div style={{
-      position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+      position: 'relative',
       width: 560, maxHeight: '85vh',
       background: 'var(--bg-base)', border: '1px solid var(--border-default)', borderRadius: 16,
-      display: 'flex', flexDirection: 'column', zIndex: 1000,
+      display: 'flex', flexDirection: 'column', zIndex: 1001,
       boxShadow: '0 20px 60px rgba(0,0,0,0.6)',
     }}>
       {/* Header */}
@@ -552,7 +555,7 @@ export function SimulationPanel({ swarmId, isOpen, onToggle, onOpenAgent, defaul
         {tab === 'deploy' && <DeployTab swarmId={swarmId} query={deployQuery} onQueryChange={handleDeployQueryChange} />}
       </div>
     </div>
-    </>
+    </div>
   );
 }
 
@@ -657,6 +660,18 @@ function analyzeLiveResults(steps: any[]): Diagnostic[] {
   return diagnostics;
 }
 
+const SAVED_QUERIES_KEY = 'agent-modus-saved-queries';
+
+function getSavedQueries(): string[] {
+  try { return JSON.parse(localStorage.getItem(SAVED_QUERIES_KEY) || '[]'); } catch { return []; }
+}
+
+function saveQuery(q: string) {
+  const queries = getSavedQueries().filter(x => x !== q);
+  queries.unshift(q);
+  localStorage.setItem(SAVED_QUERIES_KEY, JSON.stringify(queries.slice(0, 5)));
+}
+
 const DeployTab = React.memo(function DeployTab({ swarmId, query, onQueryChange }: { swarmId: string; query: string; onQueryChange: (q: string) => void }) {
   const [schedule, setSchedule] = useState<string>('once');
   const [budget, setBudget] = useState('1.00');
@@ -665,6 +680,7 @@ const DeployTab = React.memo(function DeployTab({ swarmId, query, onQueryChange 
   const [deploying, setDeploying] = useState(false);
   const [copiedBtn, setCopiedBtn] = useState<string | null>(null);
   const queryPrefilledRef = useRef(false);
+  const [savedQueries] = useState(() => getSavedQueries());
 
   function copyResults(result: any, type: 'mock' | 'live') {
     doCopyResults(result, type);
@@ -728,6 +744,7 @@ const DeployTab = React.memo(function DeployTab({ swarmId, query, onQueryChange 
 
   async function handleDeploy() {
     if (!query.trim()) return;
+    saveQuery(query.trim());
     setShowConfirm(false);
     setDeploying(true);
     try {
@@ -783,7 +800,25 @@ const DeployTab = React.memo(function DeployTab({ swarmId, query, onQueryChange 
       {/* Deploy form */}
       {isStopped && (
         <div>
-          <div style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4 }}>What should this swarm do?</div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+            <div style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>What should this swarm do?</div>
+            {savedQueries.length > 0 && (
+              <select
+                value=""
+                onChange={e => { if (e.target.value) onQueryChange(e.target.value); }}
+                style={{
+                  fontSize: 11, padding: '2px 6px', borderRadius: 4,
+                  border: '1px solid var(--border-default)', background: 'var(--bg-elevated)',
+                  color: 'var(--text-secondary)', cursor: 'pointer', fontFamily: 'var(--font-primary)',
+                }}
+              >
+                <option value="">Recent queries...</option>
+                {savedQueries.map((q: string, i: number) => (
+                  <option key={i} value={q}>{q.slice(0, 60)}{q.length > 60 ? '...' : ''}</option>
+                ))}
+              </select>
+            )}
+          </div>
           <textarea
             value={query} onChange={e => onQueryChange(e.target.value)}
             placeholder="e.g. Find medium-sized companies on Long Island that need AI training..."
