@@ -497,6 +497,31 @@ export async function getApiHealth(): Promise<{ status: string; llmAvailable: bo
   return fetchJson('/health');
 }
 
+// User Profile
+export async function getUserProfile(): Promise<any> {
+  return fetchJson('/settings/profile');
+}
+
+export async function updateUserProfile(profile: Record<string, any>): Promise<any> {
+  return putJson('/settings/profile', profile);
+}
+
+export async function findAllEmails(): Promise<any> {
+  return postJson('/prospects/find-all-emails', {});
+}
+
+export async function findProspectEmail(prospectId: string): Promise<any> {
+  return postJson(`/prospects/${prospectId}/find-email`, {});
+}
+
+export async function regenerateEmails(prospectId: string): Promise<any> {
+  return postJson(`/prospects/${prospectId}/regenerate-emails`, {});
+}
+
+export async function regenerateAllEmails(): Promise<any> {
+  return postJson('/prospects/regenerate-all', {});
+}
+
 // Search Preview
 export async function previewSearch(query: string): Promise<{
   queries: string[];

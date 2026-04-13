@@ -1,8 +1,49 @@
 import { Router } from 'express';
-import { writeFileSync, readFileSync, existsSync } from 'fs';
+import { writeFileSync, readFileSync, existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
 
 const ENV_PATH = join(process.cwd(), '.env');
+const PROFILE_PATH = join(process.cwd(), 'data', 'profile.json');
+
+export interface UserProfile {
+  name: string;
+  company: string;
+  title: string;
+  website: string;
+  linkedin: string;
+  email: string;
+  phone: string;
+  valueProp: string;        // One-liner: what you do and who you help
+  proofPoints: string[];    // Case studies, results, credentials
+  calendarLink: string;     // Calendly or similar
+  tone: 'professional' | 'conversational' | 'direct';
+  voiceSample: string;      // Example of how you actually write/talk, used as style guide
+}
+
+const DEFAULT_PROFILE: UserProfile = {
+  name: '', company: '', title: '', website: '', linkedin: '',
+  email: '', phone: '', valueProp: '', proofPoints: [], calendarLink: '', tone: 'professional', voiceSample: '',
+};
+
+function loadProfile(): UserProfile {
+  try {
+    if (existsSync(PROFILE_PATH)) {
+      return { ...DEFAULT_PROFILE, ...JSON.parse(readFileSync(PROFILE_PATH, 'utf-8')) };
+    }
+  } catch { /* ignore */ }
+  return { ...DEFAULT_PROFILE };
+}
+
+function saveProfile(profile: UserProfile): void {
+  const dir = join(process.cwd(), 'data');
+  if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+  writeFileSync(PROFILE_PATH, JSON.stringify(profile, null, 2));
+}
+
+// Exported so other services can read the profile
+export function getUserProfile(): UserProfile {
+  return loadProfile();
+}
 
 export function createSettingsRoutes(): Router {
   const router = Router();
@@ -102,6 +143,23 @@ export function createSettingsRoutes(): Router {
     }
 
     res.json({ data: results });
+  });
+
+  // GET /api/settings/profile - get user profile
+  router.get('/profile', (_req, res) => {
+    res.json({ data: loadProfile() });
+  });
+
+  // PUT /api/settings/profile - update user profile
+  router.put('/profile', (req, res) => {
+    const current = loadProfile();
+    const updated: UserProfile = { ...current, ...req.body };
+    // Ensure proofPoints is always an array
+    if (typeof updated.proofPoints === 'string') {
+      updated.proofPoints = (updated.proofPoints as string).split('\n').filter(Boolean);
+    }
+    saveProfile(updated);
+    res.json({ data: updated });
   });
 
   return router;

@@ -7,6 +7,8 @@ import {
   bulkUpdateProspectStatus,
   deleteProspectById,
   exportProspectsCSV,
+  getUserProfile,
+  updateUserProfile,
 } from '../api.js';
 
 // ------------------------------------------------------------------
@@ -35,6 +37,7 @@ interface ProspectOutreach {
   professional: string;
   conversational: string;
   valueLead: string;
+  direct: string;
 }
 
 interface Prospect {
@@ -89,7 +92,7 @@ function normalizeProspect(raw: any): Prospect {
   const company = co?.name || raw.companyName || raw.company || raw.name || 'Unknown';
   const website = co?.website || raw.website || '';
   const linkedin = co?.linkedinCompanyUrl || co?.linkedin || raw.linkedinCompanyUrl || raw.linkedin
-    || `https://linkedin.com/company/${company.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+$/, '')}`;
+    || '';
   const industry = co?.industry || raw.industry || '';
   const location = co?.location || raw.location || '';
   const employees = co?.employeeCount || co?.employees || raw.employeeCount || raw.employees || '';
@@ -139,6 +142,7 @@ function normalizeProspect(raw: any): Prospect {
       professional: getEmail('professional') || getEmail('formal') || '',
       conversational: getEmail('conversational') || getEmail('warm') || getEmail('casual') || '',
       valueLead: getEmail('valueLead') || getEmail('value') || getEmail('insight') || '',
+      direct: getEmail('direct') || '',
     },
     status,
     notes: raw.notes || '',
@@ -336,7 +340,7 @@ function parseProspectBlock(
   return {
     company,
     website: website || '',
-    linkedin: `https://linkedin.com/company/${slug}`,
+    linkedin: '',
     industry: industry || '',
     location: location || '',
     employees: employees || '',
@@ -361,7 +365,7 @@ function buildBasicProspect(name: string, combined: string, _qualify: string, _c
   return {
     company: name,
     website: urlMatch?.[1] || '',
-    linkedin: `https://linkedin.com/company/${slug}`,
+    linkedin: '',
     industry: '', location: '', employees: '', revenue: '',
     score: 5, signals: [],
     contactName: '', contactTitle: '', contactLinkedIn: '',
@@ -381,11 +385,12 @@ function extractField(text: string, pattern: RegExp): string {
 // Component
 // ------------------------------------------------------------------
 
-type EmailTone = 'professional' | 'conversational' | 'valueLead';
+type EmailTone = 'professional' | 'conversational' | 'valueLead' | 'direct';
 const TONE_LABELS: Record<EmailTone, string> = {
   professional: 'Professional',
   conversational: 'Conversational',
   valueLead: 'Value-First',
+  direct: 'Direct',
 };
 
 export function ProspectDashboard({ runData, onClose, minScore: minScoreProp, showAll }: Props) {
@@ -406,11 +411,15 @@ export function ProspectDashboard({ runData, onClose, minScore: minScoreProp, sh
   const [emailTone, setEmailTone] = useState<EmailTone>('professional');
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [senderEmail, setSenderEmail] = useState(() => localStorage.getItem('prospect-dash-sender') || '');
+  const [profile, setProfile] = useState<any>(null);
+  const [showProfileEdit, setShowProfileEdit] = useState(false);
+  const [editedEmails, setEditedEmails] = useState<Record<string, Record<string, string>>>({});
   const [localStatuses, setLocalStatuses] = useState<Record<string, PipelineStatus>>({});
   const [localNotes, setLocalNotes] = useState<Record<string, string>>({});
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkStatus, setBulkStatus] = useState<PipelineStatus>('contacted');
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [signalsExpanded, setSignalsExpanded] = useState(false);
   const notesTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Fetch DB prospects
@@ -432,6 +441,13 @@ export function ProspectDashboard({ runData, onClose, minScore: minScoreProp, sh
   useEffect(() => {
     loadDbProspects();
   }, [loadDbProspects]);
+
+  // Always load profile on mount
+  useEffect(() => {
+    getUserProfile().then(p => {
+      if (p && p.name) setProfile(p);
+    }).catch(() => {});
+  }, []);
 
   // Parse run data
   const runParsed = useMemo(() => {
@@ -478,22 +494,6 @@ export function ProspectDashboard({ runData, onClose, minScore: minScoreProp, sh
   const selected = filteredProspects[selectedIdx] || filteredProspects[0] || null;
   const industries = useMemo(() => [...new Set(allProspects.map(p => p.industry).filter(Boolean))], [allProspects]);
 
-  // Stats
-  const stats = useMemo(() => {
-    if (isDbMode && dbStats) return dbStats;
-    const total = allProspects.length;
-    const avgScore = total > 0
-      ? Math.round(allProspects.reduce((s, p) => s + p.score, 0) / total * 10) / 10
-      : 0;
-    const byStatus: Record<string, number> = {};
-    for (const p of allProspects) {
-      const key = p.id || p.company;
-      const st = localStatuses[key] || p.status;
-      byStatus[st] = (byStatus[st] || 0) + 1;
-    }
-    return { total, avgScore, byStatus };
-  }, [allProspects, isDbMode, dbStats, localStatuses]);
-
   // Helpers
   function getProspectKey(p: Prospect): string {
     return p.id || p.company;
@@ -523,7 +523,11 @@ export function ProspectDashboard({ runData, onClose, minScore: minScoreProp, sh
     const key = getProspectKey(p);
     setLocalStatuses(prev => ({ ...prev, [key]: newStatus }));
     if (isDbMode && p.id) {
-      try { await updateProspectStatus(p.id, newStatus); } catch { /* silent */ }
+      try {
+        await updateProspectStatus(p.id, newStatus);
+        // Refresh the list so status is reflected everywhere
+        loadDbProspects();
+      } catch { /* silent */ }
     }
   }
 
@@ -707,60 +711,34 @@ export function ProspectDashboard({ runData, onClose, minScore: minScoreProp, sh
           </div>
         </div>
 
-        {/* ---- Stats row ---- */}
+        {/* ---- Filter bar ---- */}
         <div style={statsBarStyle}>
-          <StatChip
-            label="Total"
-            value={stats.total}
-            active={filterStatus === 'all'}
-            onClick={() => setFilterStatus('all')}
+          <input
+            value={searchText}
+            onChange={e => setSearchText(e.target.value)}
+            placeholder="Search..."
+            style={{ ...inputSmallStyle, width: 150 }}
           />
-          <StatChip
-            label="Avg Score"
-            value={`${stats.avgScore}/10`}
-            active={false}
-            onClick={() => {}}
-            accent
-          />
-          {PIPELINE_STAGES.slice(0, 6).map(st => (
-            <StatChip
-              key={st}
-              label={st.charAt(0).toUpperCase() + st.slice(1)}
-              value={stats.byStatus[st] || 0}
-              active={filterStatus === st}
-              onClick={() => setFilterStatus(filterStatus === st ? 'all' : st)}
-              color={STATUS_COLORS[st].text}
-            />
-          ))}
-
-          <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
-            <input
-              value={searchText}
-              onChange={e => setSearchText(e.target.value)}
-              placeholder="Search..."
-              style={{ ...inputSmallStyle, width: 150 }}
-            />
+          <select
+            value={filterStatus}
+            onChange={e => setFilterStatus(e.target.value)}
+            style={selectSmallStyle}
+          >
+            <option value="all">All Status</option>
+            {PIPELINE_STAGES.map(st => (
+              <option key={st} value={st}>{st.charAt(0).toUpperCase() + st.slice(1)}</option>
+            ))}
+          </select>
+          {industries.length > 1 && (
             <select
-              value={filterStatus}
-              onChange={e => setFilterStatus(e.target.value)}
+              value={filterIndustry}
+              onChange={e => setFilterIndustry(e.target.value)}
               style={selectSmallStyle}
             >
-              <option value="all">All Status</option>
-              {PIPELINE_STAGES.map(st => (
-                <option key={st} value={st}>{st.charAt(0).toUpperCase() + st.slice(1)}</option>
-              ))}
+              <option value="all">All Industries</option>
+              {industries.map(i => <option key={i} value={i}>{i}</option>)}
             </select>
-            {industries.length > 1 && (
-              <select
-                value={filterIndustry}
-                onChange={e => setFilterIndustry(e.target.value)}
-                style={selectSmallStyle}
-              >
-                <option value="all">All Industries</option>
-                {industries.map(i => <option key={i} value={i}>{i}</option>)}
-              </select>
-            )}
-          </div>
+          )}
         </div>
 
         {/* ---- Run mode banner ---- */}
@@ -876,60 +854,138 @@ export function ProspectDashboard({ runData, onClose, minScore: minScoreProp, sh
                   <ScoreBadge score={selected.score} large />
                 </div>
 
-                {/* Link buttons */}
+                {/* Link buttons - only show validated external URLs */}
                 <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
-                  {selected.website && (
+                  {selected.website && /^https?:\/\/.+\..+/.test(selected.website) && !selected.website.includes('localhost') && (
                     <a href={selected.website} target="_blank" rel="noopener" style={linkBtnStyle}>
                       Website
                     </a>
                   )}
-                  {selected.linkedin && (
+                  {selected.linkedin && /^https?:\/\/(www\.)?linkedin\.com\//.test(selected.linkedin) && (
                     <a href={selected.linkedin} target="_blank" rel="noopener" style={linkedinBtnStyle}>
                       LinkedIn
                     </a>
                   )}
-                  {selected.contactLinkedIn && (
+                  {selected.contactLinkedIn && /^https?:\/\/(www\.)?linkedin\.com\/in\//.test(selected.contactLinkedIn) && (
                     <a href={selected.contactLinkedIn} target="_blank" rel="noopener" style={linkedinBtnStyle}>
                       Contact LinkedIn
+                    </a>
+                  )}
+                  {/* Google search fallback when no valid links exist */}
+                  {!(selected.website && /^https?:\/\/.+\..+/.test(selected.website) && !selected.website.includes('localhost')) && (
+                    <a href={`https://www.google.com/search?q=${encodeURIComponent(selected.company + ' ' + (selected.location || ''))}`} target="_blank" rel="noopener" style={linkBtnStyle}>
+                      Search Google
+                    </a>
+                  )}
+                  {!(selected.linkedin && /^https?:\/\/(www\.)?linkedin\.com\//.test(selected.linkedin)) && (
+                    <a href={`https://www.google.com/search?q=${encodeURIComponent(selected.company + ' site:linkedin.com')}`} target="_blank" rel="noopener" style={linkedinBtnStyle}>
+                      Find on LinkedIn
                     </a>
                   )}
                 </div>
               </div>
 
               {/* Contact card */}
-              {(selected.contactName || selected.contactEmail) && (
-                <div style={sectionCardStyle}>
-                  <div style={sectionLabelStyle}>Contact</div>
-                  {selected.contactName && (
-                    <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>
-                      {selected.contactName}
-                      {selected.contactTitle && (
-                        <span style={{ fontWeight: 400, color: 'var(--text-secondary)', marginLeft: 8, fontSize: 13 }}>
-                          {selected.contactTitle}
-                        </span>
-                      )}
-                    </div>
-                  )}
+              <div style={sectionCardStyle}>
+                <div style={sectionLabelStyle}>Contact</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                  <input
+                    value={selected.contactName || ''}
+                    placeholder="Contact name"
+                    onChange={e => {
+                      const updated = { ...selected, contactName: e.target.value };
+                      // Update local state
+                      if (isDbMode) {
+                        setDbProspects(prev => prev.map(p => p.id === selected.id ? updated : p));
+                      }
+                    }}
+                    onBlur={e => {
+                      if (isDbMode && e.target.value !== selected.contactName) {
+                        // Save via prospect update (reuse saveProspect by calling the API)
+                        fetch(`/api/prospects/${selected.id}/contact`, {
+                          method: 'PUT',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ contactName: e.target.value }),
+                        }).catch(() => {});
+                      }
+                    }}
+                    style={contactInputStyle}
+                  />
+                  <input
+                    value={selected.contactTitle || ''}
+                    placeholder="Title"
+                    onChange={e => {
+                      if (isDbMode) {
+                        setDbProspects(prev => prev.map(p => p.id === selected.id ? { ...p, contactTitle: e.target.value } : p));
+                      }
+                    }}
+                    onBlur={e => {
+                      if (isDbMode) {
+                        fetch(`/api/prospects/${selected.id}/contact`, {
+                          method: 'PUT',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ contactTitle: e.target.value }),
+                        }).catch(() => {});
+                      }
+                    }}
+                    style={contactInputStyle}
+                  />
+                </div>
+                <div style={{ display: 'flex', gap: 6, marginTop: 6, alignItems: 'center' }}>
+                  <input
+                    value={selected.contactEmail || ''}
+                    placeholder="Email address"
+                    onChange={e => {
+                      if (isDbMode) {
+                        setDbProspects(prev => prev.map(p => p.id === selected.id ? { ...p, contactEmail: e.target.value } : p));
+                      }
+                    }}
+                    onBlur={e => {
+                      if (isDbMode) {
+                        fetch(`/api/prospects/${selected.id}/contact`, {
+                          method: 'PUT',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ contactEmail: e.target.value }),
+                        }).catch(() => {});
+                      }
+                    }}
+                    style={{ ...contactInputStyle, flex: 1 }}
+                  />
                   {selected.contactEmail && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
-                      <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{selected.contactEmail}</span>
-                      <button onClick={() => handleCopy(selected.contactEmail, 'email')} style={copyBtnStyle}>
-                        {copiedField === 'email' ? 'Copied!' : 'Copy'}
-                      </button>
-                    </div>
+                    <button onClick={() => handleCopy(selected.contactEmail, 'email')} style={copyBtnStyle}>
+                      {copiedField === 'email' ? 'Copied!' : 'Copy'}
+                    </button>
                   )}
                 </div>
-              )}
+              </div>
 
-              {/* Buying Signals */}
+              {/* Buying Signals (collapsible) */}
               {selected.signals.length > 0 && (
                 <div style={{ marginBottom: 16 }}>
-                  <div style={sectionLabelStyle}>Buying Signals</div>
-                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                    {selected.signals.map((s, i) => (
-                      <span key={i} style={signalTagStyle}>{s}</span>
-                    ))}
+                  <div
+                    onClick={() => setSignalsExpanded(prev => !prev)}
+                    style={{
+                      ...sectionLabelStyle,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      userSelect: 'none',
+                    }}
+                  >
+                    <span style={{ fontSize: 9, color: 'var(--text-tertiary)' }}>{signalsExpanded ? '\u25BC' : '\u25B6'}</span>
+                    Buying Signals
+                    <span style={{ fontWeight: 500, fontSize: 10, color: 'var(--text-secondary)', textTransform: 'none', letterSpacing: 'normal' }}>
+                      ({selected.signals.length})
+                    </span>
                   </div>
+                  {signalsExpanded && (
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                      {selected.signals.map((s, i) => (
+                        <span key={i} style={signalTagStyle}>{s}</span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -956,7 +1012,7 @@ export function ProspectDashboard({ runData, onClose, minScore: minScoreProp, sh
                     return (
                       <button
                         key={st}
-                        onClick={() => handleStatusChange(selected, st)}
+                        onClick={() => handleStatusChange(selected, getEffectiveStatus(selected) === st ? 'new' : st)}
                         style={{
                           padding: '5px 10px',
                           borderRadius: 6,
@@ -987,12 +1043,16 @@ export function ProspectDashboard({ runData, onClose, minScore: minScoreProp, sh
                       key={tone}
                       onClick={() => setEmailTone(tone)}
                       style={{
-                        padding: '6px 14px', borderRadius: 6, border: 'none', cursor: 'pointer',
-                        fontSize: 11, fontWeight: 600, fontFamily: 'var(--font-primary)',
-                        background: emailTone === tone
-                          ? 'linear-gradient(135deg, #0891b2, #06b6d4)'
-                          : 'transparent',
-                        color: emailTone === tone ? '#fff' : 'var(--text-tertiary)',
+                        padding: '3px 10px',
+                        borderRadius: 0,
+                        border: 'none',
+                        borderBottom: emailTone === tone ? '2px solid #00d9ff' : '2px solid transparent',
+                        cursor: 'pointer',
+                        fontSize: 11,
+                        fontWeight: emailTone === tone ? 600 : 400,
+                        fontFamily: 'var(--font-primary)',
+                        background: 'transparent',
+                        color: emailTone === tone ? '#00d9ff' : 'var(--text-tertiary)',
                         transition: 'all 0.15s',
                       }}
                     >
@@ -1001,20 +1061,126 @@ export function ProspectDashboard({ runData, onClose, minScore: minScoreProp, sh
                   ))}
                 </div>
 
-                {selected.outreach[emailTone] ? (
-                  <div style={emailPreviewStyle}>
-                    {selected.outreach[emailTone]}
+                {/* Profile summary */}
+                {profile?.name && (
+                  <div style={{
+                    padding: '8px 12px', borderRadius: 8, marginBottom: 10,
+                    background: 'rgba(0,217,255,0.04)', border: '1px solid rgba(0,217,255,0.1)',
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  }}>
+                    <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
+                      Sending as <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{profile.name}</span>
+                      {profile.company ? ` at ${profile.company}` : ''}
+                      {profile.calendarLink ? ' (calendar link included)' : ''}
+                    </div>
+                    <button onClick={() => setShowProfileEdit(!showProfileEdit)} style={{
+                      fontSize: 10, padding: '2px 8px', borderRadius: 4,
+                      border: '1px solid var(--border-default)', background: 'transparent',
+                      color: 'var(--text-tertiary)', cursor: 'pointer', fontFamily: 'var(--font-primary)',
+                    }}>Edit Profile</button>
                   </div>
-                ) : (
-                  <div style={emailEmptyStyle}>
-                    No {TONE_LABELS[emailTone].toLowerCase()} email generated for this prospect.
-                    Run the swarm with the Command agent to generate outreach drafts.
+                )}
+                {!profile?.name && (
+                  <div style={{
+                    padding: '10px 12px', borderRadius: 8, marginBottom: 10,
+                    background: 'rgba(251,191,36,0.06)', border: '1px solid rgba(251,191,36,0.15)',
+                    fontSize: 11, color: '#fbbf24', cursor: 'pointer',
+                  }} onClick={() => setShowProfileEdit(true)}>
+                    Set up your profile to personalize outreach emails with your name, company, and CTA links.
                   </div>
                 )}
 
+                {/* Inline profile editor */}
+                {showProfileEdit && (
+                  <div style={{
+                    padding: '12px 14px', borderRadius: 8, marginBottom: 10,
+                    background: 'var(--bg-surface)', border: '1px solid var(--border-default)',
+                  }}>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Your Profile</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                      {[
+                        ['name', 'Your Name'], ['company', 'Company'], ['title', 'Title'], ['email', 'Email'],
+                        ['website', 'Website'], ['linkedin', 'LinkedIn URL'], ['phone', 'Phone'], ['calendarLink', 'Calendar Link (Calendly etc.)'],
+                      ].map(([key, label]) => (
+                        <input key={key} value={profile?.[key] || ''} placeholder={label}
+                          onChange={e => setProfile((p: any) => ({ ...p, [key]: e.target.value }))}
+                          onBlur={() => profile && updateUserProfile(profile).catch(() => {})}
+                          style={{
+                            padding: '6px 10px', borderRadius: 6, border: '1px solid var(--border-default)',
+                            background: 'var(--bg-elevated)', color: 'var(--text-primary)',
+                            fontSize: 12, fontFamily: 'var(--font-primary)',
+                          }} />
+                      ))}
+                    </div>
+                    <textarea
+                      value={profile?.valueProp || ''} placeholder="What you do and who you help (one-liner)"
+                      onChange={e => setProfile((p: any) => ({ ...p, valueProp: e.target.value }))}
+                      onBlur={() => profile && updateUserProfile(profile).catch(() => {})}
+                      style={{
+                        width: '100%', marginTop: 8, padding: '6px 10px', borderRadius: 6,
+                        border: '1px solid var(--border-default)', background: 'var(--bg-elevated)',
+                        color: 'var(--text-primary)', fontSize: 12, fontFamily: 'var(--font-primary)',
+                        resize: 'vertical', minHeight: 40, boxSizing: 'border-box',
+                      }} />
+                    <textarea
+                      value={Array.isArray(profile?.proofPoints) ? profile.proofPoints.join('\n') : profile?.proofPoints || ''}
+                      placeholder="Proof points (one per line): case studies, results, credentials"
+                      onChange={e => setProfile((p: any) => ({ ...p, proofPoints: e.target.value.split('\n') }))}
+                      onBlur={() => profile && updateUserProfile(profile).catch(() => {})}
+                      style={{
+                        width: '100%', marginTop: 8, padding: '6px 10px', borderRadius: 6,
+                        border: '1px solid var(--border-default)', background: 'var(--bg-elevated)',
+                        color: 'var(--text-primary)', fontSize: 12, fontFamily: 'var(--font-primary)',
+                        resize: 'vertical', minHeight: 40, boxSizing: 'border-box',
+                      }} />
+                    <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: 12, marginBottom: 4 }}>Your Voice</div>
+                    <textarea
+                      value={profile?.voiceSample || ''}
+                      placeholder="Paste an example of how you actually write emails or messages. This becomes the style guide for all generated emails. Be yourself. If you're casual and direct, write that way here."
+                      onChange={e => setProfile((p: any) => ({ ...p, voiceSample: e.target.value }))}
+                      onBlur={() => profile && updateUserProfile(profile).catch(() => {})}
+                      style={{
+                        width: '100%', padding: '8px 10px', borderRadius: 6,
+                        border: '1px solid var(--border-default)', background: 'var(--bg-elevated)',
+                        color: 'var(--text-primary)', fontSize: 12, fontFamily: 'var(--font-primary)',
+                        resize: 'vertical', minHeight: 80, boxSizing: 'border-box', lineHeight: 1.6,
+                      }} />
+                    <button onClick={() => setShowProfileEdit(false)} style={{
+                      marginTop: 8, padding: '6px 14px', borderRadius: 6, border: 'none',
+                      background: 'var(--accent-primary)', color: '#fff', fontSize: 11,
+                      fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-primary)',
+                    }}>Done</button>
+                  </div>
+                )}
+
+                {/* Editable email */}
+                <textarea
+                  value={editedEmails[selected.id]?.[emailTone] ?? selected.outreach[emailTone] ?? ''}
+                  onChange={e => setEditedEmails(prev => ({
+                    ...prev,
+                    [selected.id]: { ...(prev[selected.id] || {}), [emailTone]: e.target.value },
+                  }))}
+                  placeholder={`No ${TONE_LABELS[emailTone].toLowerCase()} email generated yet. You can write one here, or run the swarm with your profile set up to auto-generate.`}
+                  style={{
+                    width: '100%', minHeight: 160, padding: '12px 14px', borderRadius: 10,
+                    background: 'var(--bg-elevated)', border: '1px solid var(--border-default)',
+                    color: 'var(--text-secondary)', fontSize: 13, fontFamily: 'var(--font-primary)',
+                    lineHeight: 1.7, resize: 'vertical', boxSizing: 'border-box',
+                  }}
+                />
+
                 <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
                   <button
-                    onClick={() => handleSendEmail(selected, emailTone)}
+                    onClick={() => {
+                      const body = editedEmails[selected.id]?.[emailTone] ?? selected.outreach[emailTone] ?? '';
+                      // Extract subject from body if it starts with "Subject: ..."
+                      const subjectMatch = body.match(/^Subject:\s*(.+)/m);
+                      const subject = subjectMatch?.[1] || `${selected.company}`;
+                      const emailBody = body.replace(/^Subject:\s*.+\n\n?/m, '');
+                      const to = selected.contactEmail || '';
+                      const mailtoUrl = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`;
+                      window.open(mailtoUrl, '_blank');
+                    }}
                     disabled={!selected.contactEmail}
                     style={{
                       ...primaryBtnStyle,
@@ -1026,14 +1192,21 @@ export function ProspectDashboard({ runData, onClose, minScore: minScoreProp, sh
                     {selected.contactEmail ? 'Send Email' : 'No Email Address'}
                   </button>
                   <button
-                    onClick={() => handleCopy(selected.outreach[emailTone] || '', 'outreach')}
-                    disabled={!selected.outreach[emailTone]}
-                    style={{
-                      ...secondaryBtnStyle,
-                      opacity: selected.outreach[emailTone] ? 1 : 0.4,
-                    }}
+                    onClick={() => { handleCopy(selected.contactEmail || '', 'email-addr'); }}
+                    disabled={!selected.contactEmail}
+                    style={{ ...secondaryBtnStyle, opacity: selected.contactEmail ? 1 : 0.4 }}
                   >
-                    {copiedField === 'outreach' ? 'Copied!' : 'Copy Email'}
+                    {copiedField === 'email-addr' ? 'Copied!' : 'Copy Address'}
+                  </button>
+                  <button
+                    onClick={() => {
+                      const body = editedEmails[selected.id]?.[emailTone] ?? selected.outreach[emailTone] ?? '';
+                      handleCopy(body, 'email-body');
+                    }}
+                    disabled={!(editedEmails[selected.id]?.[emailTone] ?? selected.outreach[emailTone])}
+                    style={{ ...secondaryBtnStyle, opacity: (editedEmails[selected.id]?.[emailTone] ?? selected.outreach[emailTone]) ? 1 : 0.4 }}
+                  >
+                    {copiedField === 'email-body' ? 'Copied!' : 'Copy Body'}
                   </button>
                 </div>
               </div>
@@ -1157,48 +1330,6 @@ function StatusPill({ status, small }: { status: PipelineStatus; small?: boolean
   );
 }
 
-function StatChip({
-  label,
-  value,
-  active,
-  onClick,
-  color,
-  accent,
-}: {
-  label: string;
-  value: string | number;
-  active: boolean;
-  onClick: () => void;
-  color?: string;
-  accent?: boolean;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      style={{
-        padding: '6px 12px',
-        borderRadius: 8,
-        border: active ? '1px solid #00d9ff' : '1px solid var(--border-subtle)',
-        background: active ? 'rgba(0,217,255,0.08)' : 'transparent',
-        cursor: 'pointer',
-        textAlign: 'left',
-        fontFamily: 'var(--font-primary)',
-        transition: 'all 0.15s',
-      }}
-    >
-      <div style={{
-        fontSize: 14,
-        fontWeight: 700,
-        color: color || (accent ? '#00d9ff' : 'var(--text-primary)'),
-      }}>
-        {value}
-      </div>
-      <div style={{ fontSize: 9, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-        {label}
-      </div>
-    </button>
-  );
-}
 
 // ------------------------------------------------------------------
 // Styles
@@ -1323,11 +1454,11 @@ const signalTagStyle: React.CSSProperties = {
 
 const toneSelectorStyle: React.CSSProperties = {
   display: 'flex',
-  gap: 2,
+  gap: 0,
   marginBottom: 12,
-  background: 'rgba(255,255,255,0.03)',
-  borderRadius: 8,
-  padding: 3,
+  background: 'transparent',
+  borderBottom: '1px solid var(--border-subtle)',
+  padding: 0,
   width: 'fit-content',
 };
 
@@ -1420,6 +1551,12 @@ const linkedinBtnStyle: React.CSSProperties = {
   textDecoration: 'none',
   fontFamily: 'var(--font-primary)',
   transition: 'background 0.15s',
+};
+
+const contactInputStyle: React.CSSProperties = {
+  padding: '6px 10px', borderRadius: 6, border: '1px solid var(--border-default)',
+  background: 'var(--bg-elevated)', color: 'var(--text-primary)',
+  fontSize: 13, fontFamily: 'var(--font-primary)', outline: 'none',
 };
 
 const copyBtnStyle: React.CSSProperties = {

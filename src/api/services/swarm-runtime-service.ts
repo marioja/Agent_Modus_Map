@@ -170,13 +170,55 @@ async function executeRun(swarmId: string, swarmService: SwarmService): Promise<
 
     saveResultToDb(runResult);
 
-    // Auto-save prospects to ruvector database
+    // Auto-save prospects to ruvector database and enrich with Hunter.io
     const commandStep = result.steps.find(s => s.nickname === 'Command' && s.status === 'success');
     if (commandStep?.output) {
       try {
-        const { saveProspectsFromRun } = await import('./prospect-service.js');
+        const { saveProspectsFromRun, getAllProspects, saveProspect } = await import('./prospect-service.js');
         const saved = await saveProspectsFromRun(runResult.id, commandStep.output);
         console.log(`[RUNTIME] Saved ${saved.newCount} new, ${saved.updatedCount} updated prospects to database`);
+
+        // Auto-enrich: find emails via Hunter.io for prospects missing them
+        const hunterKey = process.env.HUNTER_API_KEY;
+        if (hunterKey && saved.newCount > 0) {
+          try {
+            const allProspects = await getAllProspects();
+            const needsEmail = allProspects.filter((p: any) =>
+              !p.contactEmail || p.contactEmail.includes('Not') || !p.contactEmail.includes('@')
+            );
+            let enriched = 0;
+            for (const prospect of needsEmail.slice(0, 10)) {
+              let domain = '';
+              if (prospect.website && /^https?:\/\//.test(prospect.website)) {
+                try { domain = new URL(prospect.website).hostname.replace(/^www\./, ''); } catch {}
+              }
+              if (!domain) continue;
+              try {
+                const r = await fetch(`https://api.hunter.io/v2/domain-search?domain=${encodeURIComponent(domain)}&api_key=${hunterKey}&limit=5`);
+                if (r.ok) {
+                  const data = await r.json() as any;
+                  const emails = data.data?.emails || [];
+                  if (emails.length > 0) {
+                    const best = emails[0];
+                    const updated = { ...prospect, contactEmail: best.value };
+                    if (best.first_name && !prospect.contactName) {
+                      updated.contactName = `${best.first_name} ${best.last_name || ''}`.trim();
+                    }
+                    if (best.position && !prospect.contactTitle) {
+                      updated.contactTitle = best.position;
+                    }
+                    await saveProspect(updated);
+                    enriched++;
+                    console.log(`[RUNTIME] Hunter enriched ${prospect.company}: ${best.value}`);
+                  }
+                }
+              } catch { /* skip this prospect */ }
+            }
+            if (enriched > 0) console.log(`[RUNTIME] Hunter enriched ${enriched} prospects with emails`);
+          } catch (err) {
+            console.log('[RUNTIME] Hunter enrichment failed:', (err as Error).message);
+          }
+        }
       } catch (err) {
         console.log('[RUNTIME] Failed to save prospects:', (err as Error).message);
       }
@@ -320,4 +362,14 @@ export function getAllDeployments(): DeployConfig[] {
 
 export function getAllResults(): RunResult[] {
   return loadAllResultsFromDb();
+}
+
+export function deleteRunResult(resultId: string): void {
+  if (!_db) return;
+  _db.prepare('DELETE FROM deploy_results WHERE id = ?').run(resultId);
+}
+
+export function clearRunHistory(swarmId: string): void {
+  if (!_db) return;
+  _db.prepare('DELETE FROM deploy_results WHERE swarm_id = ?').run(swarmId);
 }

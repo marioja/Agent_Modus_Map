@@ -39,6 +39,8 @@ export function createSwarmRoutes(db: Database.Database): Router {
       res.status(404).json({ error: 'not_found', message: 'Swarm not found.' });
       return;
     }
+    // Bump updated_at so recently opened swarms sort to top
+    swarmService.touchSwarm(req.params.id);
     res.json({ data: swarm });
   });
 

@@ -758,6 +758,7 @@ const DeployTab = React.memo(function DeployTab({ swarmId, query, onQueryChange 
   const [showConfirm, setShowConfirm] = useState(false);
   const [dashboardRun, setDashboardRun] = useState<any>(null);
   const [showAllProspects, setShowAllProspects] = useState(false);
+  const [showAllRuns, setShowAllRuns] = useState(false);
 
   async function handlePreviewSearch() {
     if (!query.trim()) return;
@@ -1020,13 +1021,22 @@ const DeployTab = React.memo(function DeployTab({ swarmId, query, onQueryChange 
             <div style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
               Results ({results.length})
             </div>
-            <button onClick={() => setShowAllProspects(true)} style={{
-              padding: '4px 12px', borderRadius: 6, fontSize: 11, fontWeight: 700,
-              border: '1px solid #22c55e', background: 'rgba(34,197,94,0.08)',
-              color: '#22c55e', cursor: 'pointer', fontFamily: 'var(--font-primary)',
-            }}>Prospect Database</button>
+            <div style={{ display: 'flex', gap: 6 }}>
+              <button onClick={() => setShowAllProspects(true)} style={{
+                padding: '4px 12px', borderRadius: 6, fontSize: 11, fontWeight: 700,
+                border: '1px solid #22c55e', background: 'rgba(34,197,94,0.08)',
+                color: '#22c55e', cursor: 'pointer', fontFamily: 'var(--font-primary)',
+              }}>Prospect Database</button>
+              {results.length > 3 && (
+                <button onClick={() => setShowAllRuns(!showAllRuns)} style={{
+                  padding: '4px 10px', borderRadius: 6, fontSize: 10, fontWeight: 600,
+                  border: '1px solid var(--border-default)', background: 'transparent',
+                  color: 'var(--text-tertiary)', cursor: 'pointer', fontFamily: 'var(--font-primary)',
+                }}>{showAllRuns ? 'Show Less' : `Show All ${results.length}`}</button>
+              )}
+            </div>
           </div>
-          {results.map((run: any, i: number) => (
+          {(showAllRuns ? results : results.slice(0, 3)).map((run: any, i: number) => (
             <details key={run.id || i} style={{
               marginBottom: 6, borderRadius: 8, border: '1px solid var(--border-subtle)',
               background: 'var(--bg-surface)', overflow: 'hidden',
@@ -1040,8 +1050,26 @@ const DeployTab = React.memo(function DeployTab({ swarmId, query, onQueryChange 
                   <span style={{ color: run.status === 'success' ? '#22c55e' : '#ef4444', marginRight: 6 }}>{'●'}</span>
                   Run #{results.length - i} - {new Date(run.timestamp).toLocaleString()}
                 </span>
-                <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>
-                  {run.agentsProcessed} agents, ${run.cost?.toFixed(4) || '0'}
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 10, color: 'var(--text-tertiary)' }}>
+                    {run.agentsProcessed} agents, ${run.cost?.toFixed(4) || '0'}
+                  </span>
+                  <button
+                    onClick={async (e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (!confirm('Delete this run?')) return;
+                      try {
+                        await fetch(`/api/simulate/${swarmId}/deploy/results/${run.id}`, { method: 'DELETE' });
+                        refreshStatus();
+                      } catch { /* ignore */ }
+                    }}
+                    style={{
+                      background: 'none', border: 'none', color: 'var(--text-tertiary)',
+                      cursor: 'pointer', fontSize: 14, padding: '0 4px', lineHeight: 1,
+                    }}
+                    title="Delete this run"
+                  >{'\u00D7'}</button>
                 </span>
               </summary>
               <div style={{ padding: '0 14px 14px', maxHeight: 400, overflowY: 'auto' }}>

@@ -5,6 +5,7 @@ import type { Swarm, Agent } from '../../shared/types/index.js';
 import { searchWeb, formatSearchResults, scrapeDirectoryPages } from './web-search-service.js';
 import { getDb } from '../db/database.js';
 import { insertDecisionTrace } from '../db/decision-trace-store.js';
+import { getUserProfile } from '../routes/settings-routes.js';
 
 export interface LiveExecutionStep {
   agentId: string;
@@ -75,31 +76,36 @@ export async function previewSearch(userInput: string): Promise<{
     model: 'claude-haiku-4-5-20251001',
     max_tokens: 300,
     temperature: 0,
-    system: `You generate web search queries to find SPECIFIC REAL COMPANIES by name. Not directories, not articles, not training providers. The goal is to find pages that LIST actual company names.
+    system: `You generate web search queries that find ACTUAL COMPANY WEBSITES. Not directories, not certification bodies, not news articles, not nonprofit organizations.
 
-Rules:
-- Every query MUST find pages with real company names on them
-- Use site:linkedin.com/company to find company pages directly
-- Use "list of" or "top" to find listicles with company names
-- If location is mentioned, include it in EVERY query
-- If "women-owned" mentioned, search for certified women-owned business LISTS, not the certification body itself
-- Include specific industries from the request
-- Target 6 queries, one per line, no numbering
+Your job: take the user's request and generate 12 highly specific search queries. Each query should find a REAL COMPANY'S OWN WEBSITE.
 
-CRITICAL: NEVER ask for more information. NEVER output anything except search queries. If the input is vague, make your best guess and output queries anyway. Output ONLY the queries, one per line.
+Strategy:
+1. Extract the location from the request (city, county, state)
+2. Extract or infer industries. If the user mentions specific industries, use those. If not, use these common B2B industries: healthcare, legal, accounting, real estate, manufacturing, professional services, insurance, construction
+3. Generate 1-2 queries PER INDUSTRY, each including the location
+4. Each query should target the company's own website, NOT a directory
 
-Example good queries for "women-owned businesses on Long Island in healthcare":
-site:linkedin.com/company "Long Island" healthcare owner
-"women-owned" "Long Island" healthcare company list
-"Nassau County" OR "Suffolk County" woman-owned business healthcare
-"Long Island" top healthcare companies employees
-site:inc.com OR site:bloomberg.com "Long Island" women business owner
-"WBENC certified" "New York" healthcare company list`,
+Query patterns that find real companies:
+- "[industry] firm [location]" (e.g., "accounting firm Smithtown NY")
+- "[industry] company [location] employees" (e.g., "manufacturing company Nassau County employees")
+- site:linkedin.com/company "[location]" [industry]
+- "[location]" "[industry]" "about us" OR "our team" OR "contact"
+
+Query patterns to NEVER use (these return directories, not companies):
+- "directory" "list" "top" "best" "certified" "WBENC" "chamber"
+- site:yelp.com site:bbb.org site:findlaw.com site:avvo.com
+
+If the user mentions "women-owned," add that as a modifier to SOME queries but not all. Most women-owned businesses don't have "women-owned" on their homepage, so also search without it.
+
+Output exactly 12 queries, one per line. No numbering, no explanation.
+
+CRITICAL: NEVER ask for more information. Output ONLY queries.`,
     messages: [{ role: 'user', content: userInput }],
   });
 
   const queryText = queryResponse.content.filter(b => b.type === 'text').map(b => (b as any).text).join('\n');
-  const queries = queryText.split('\n').map(q => q.trim()).filter(q => q.length > 5).slice(0, 6);
+  const queries = queryText.split('\n').map(q => q.trim()).filter(q => q.length > 5).slice(0, 12);
 
   let allResults: Awaited<ReturnType<typeof searchWeb>> = [];
   for (const q of queries) {
@@ -180,7 +186,7 @@ site:inc.com OR site:bloomberg.com "Long Island" women business owner
       messages: [{ role: 'user', content: userInput }],
     });
     const queryText = queryResponse.content.filter(b => b.type === 'text').map(b => (b as any).text).join('\n');
-    const queries = queryText.split('\n').map(q => q.trim()).filter(q => q.length > 5 && !q.startsWith('*') && !q.startsWith('-') && !q.includes('provide me') && !q.includes('Please') && !q.includes('I\'m ready')).slice(0, 6);
+    const queries = queryText.split('\n').map(q => q.trim()).filter(q => q.length > 5 && !q.startsWith('*') && !q.startsWith('-') && !q.includes('provide me') && !q.includes('Please') && !q.includes('I\'m ready')).slice(0, 12);
     console.log(`[LIVE] Search queries: ${queries.join(' | ')}`);
 
     let allResults: Awaited<ReturnType<typeof searchWeb>> = [];
@@ -203,8 +209,66 @@ site:inc.com OR site:bloomberg.com "Long Island" women business owner
       return true;
     });
 
+    // Scrape contact/about pages from company websites to find emails and contact names
+    let contactData = '';
+    const tavilyKeyForContacts = process.env.TAVILY_API_KEY;
+    if (tavilyKeyForContacts && allResults.length > 0) {
+      // Filter to actual company websites (not directories, aggregators, or social media)
+      const nonCompanySites = ['linkedin.com', 'yelp.com', 'bbb.org', 'google.com', 'facebook.com', 'twitter.com', 'findlaw.com', 'justia.com', 'avvo.com', 'lawyers.com', 'superlawyers.com', 'martindale.com', 'bizjournals.com', 'glassdoor.com', 'indeed.com', 'contactout.com', 'zoominfo.com', 'manta.com', 'yellowpages.com', 'topworkplaces.com', 'inc.com', 'forbes.com', 'wikipedia.org', 'reddit.com', 'lensa.com', 'lawinfo.com', 'nolo.com'];
+      const companyUrls = allResults
+        .filter(r => {
+          if (!r.url || !/^https?:\/\//.test(r.url)) return false;
+          const hostname = new URL(r.url).hostname.toLowerCase();
+          return !nonCompanySites.some(s => hostname.includes(s));
+        })
+        .map(r => r.url)
+        .slice(0, 8);
+
+      if (companyUrls.length > 0) {
+        const contactUrls: string[] = [];
+        for (const url of companyUrls) {
+          const base = url.replace(/\/$/, '');
+          contactUrls.push(base); // Home page (many small biz have email right there)
+          contactUrls.push(base + '/contact');
+          contactUrls.push(base + '/about');
+        }
+
+        console.log(`[LIVE] Scraping ${contactUrls.length} pages from ${companyUrls.length} company sites: ${companyUrls.join(', ')}`);
+        try {
+          const extractRes = await fetch('https://api.tavily.com/extract', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ api_key: tavilyKeyForContacts, urls: contactUrls.slice(0, 20) }),
+          });
+
+          if (extractRes.ok) {
+            const extractData = await extractRes.json() as any;
+            const pageResults = extractData.results || [];
+            const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+            const contactParts: string[] = [];
+
+            for (const page of pageResults) {
+              if (!page.raw_content) continue;
+              const emails: string[] = (page.raw_content.match(emailRegex) || [])
+                .filter((e: string) => !e.includes('example.com') && !e.includes('sentry') && !e.includes('webpack') && !e.startsWith('email@') && !e.startsWith('name@') && !e.startsWith('not@'));
+              if (emails.length > 0) {
+                contactParts.push(`[CONTACT INFO from ${page.url}]: Emails found: ${[...new Set(emails)].join(', ')}`);
+                console.log(`[LIVE] Found emails on ${page.url}: ${emails.join(', ')}`);
+              }
+            }
+
+            if (contactParts.length > 0) {
+              contactData = '\n\n=== CONTACT INFO SCRAPED FROM COMPANY WEBSITES ===\n' + contactParts.join('\n') + '\n=== END CONTACT INFO ===\nIMPORTANT: Use these REAL email addresses for the prospects. Do NOT make up email addresses.';
+            }
+          }
+        } catch (err) {
+          console.log('[LIVE] Contact page scraping failed:', (err as Error).message);
+        }
+      }
+    }
+
     if (allResults.length > 0) {
-      sharedSearchContext = '\n\n=== REAL WEB SEARCH RESULTS (shared across all agents) ===\nThese are actual search results. Extract ONLY real company names that would BUY consulting/training services. Do NOT return training providers, consultants, vendors, nonprofits, or educational institutions. If a result is a directory page, extract the individual companies listed on it. For each company include: name, website URL, industry, and any contact info found. IMPORTANT: When you find directory pages with [DIRECTORY PAGE CONTENT], extract EVERY company name listed there.\n\n' + formatSearchResults(allResults) + '\n\n=== END SEARCH RESULTS ===';
+      sharedSearchContext = '\n\n=== REAL WEB SEARCH RESULTS (shared across all agents) ===\nThese are actual search results. Extract ONLY real company names that would BUY consulting/training services. Do NOT return training providers, consultants, vendors, nonprofits, or educational institutions. If a result is a directory page, extract the individual companies listed on it. For each company include: name, website URL, industry, and any contact info found. IMPORTANT: When you find directory pages with [DIRECTORY PAGE CONTENT], extract EVERY company name listed there.\n\n' + formatSearchResults(allResults) + '\n\n=== END SEARCH RESULTS ===' + contactData;
       console.log(`[LIVE] Found ${allResults.length} search results (deduped) to share with all agents`);
     }
     // Token tracking for search query generation happens after main variables are declared
@@ -297,7 +361,16 @@ site:inc.com OR site:bloomberg.com "Long Island" women business owner
       for (const targetId of downstreamIds) {
         const targetAgent = swarm.agents.find(a => a.id === targetId);
         if (targetAgent && !visited.has(targetId)) {
-          const contextInput = `Previous agent "${agent.nickname}" produced this output:\n\n${output.slice(0, 800)}\n\nProcess this according to your role.${sharedSearchContext}`;
+          let contextInput = `Previous agent "${agent.nickname}" produced this output:\n\n${output.slice(0, 800)}\n\nProcess this according to your role.${sharedSearchContext}`;
+
+          // Inject sender profile into outreach-writing agents
+          if (['Craft', 'Social', 'Warm', 'Draft'].includes(targetAgent.nickname)) {
+            const p = getUserProfile();
+            if (p.name) {
+              contextInput += `\n\n=== SENDER PROFILE ===\nName: ${p.name}${p.title ? ', ' + p.title : ''}${p.company ? ' at ' + p.company : ''}${p.website ? '\nWebsite: ' + p.website : ''}${p.linkedin ? '\nLinkedIn: ' + p.linkedin : ''}${p.valueProp ? '\nWhat we do: ' + p.valueProp : ''}${p.proofPoints?.length ? '\nProof: ' + p.proofPoints.join('; ') : ''}${p.calendarLink ? '\nBook a call: ' + p.calendarLink : ''}\nSign all emails from ${p.name}. Include website in signature. Never use [brackets] for placeholders.\n=== END ===`;
+            }
+          }
+
           queue.push({ agent: targetAgent, input: contextInput });
           dataFlow.push({
             from: agent.nickname,
@@ -398,7 +471,34 @@ site:inc.com OR site:bloomberg.com "Long Island" women business owner
     if (combinedParts.length > 0) {
       const config = commandAgent.config as Record<string, any>;
       const systemPrompt = buildSystemPrompt(commandAgent, config);
-      const commandInput = `Here is the combined output from all upstream agents. Compile this into the structured JSON dashboard format.\n\n${combinedParts.join('\n')}`;
+
+      // Inject user profile for personalized email generation
+      const profile = getUserProfile();
+      let profileContext = '';
+      if (profile.name) {
+        const parts: string[] = [];
+        parts.push(`=== SENDER PROFILE (use this in all outreach emails) ===`);
+        parts.push(`Name: ${profile.name}`);
+        if (profile.title) parts.push(`Title: ${profile.title}`);
+        if (profile.company) parts.push(`Company: ${profile.company}`);
+        if (profile.website) parts.push(`Website: ${profile.website}`);
+        if (profile.linkedin) parts.push(`LinkedIn: ${profile.linkedin}`);
+        if (profile.email) parts.push(`Email: ${profile.email}`);
+        if (profile.phone) parts.push(`Phone: ${profile.phone}`);
+        if (profile.valueProp) parts.push(`What we do: ${profile.valueProp}`);
+        if (profile.proofPoints?.length) parts.push(`Proof points: ${profile.proofPoints.join('; ')}`);
+        if (profile.calendarLink) parts.push(`Calendar link for CTAs: ${profile.calendarLink}`);
+        parts.push(`Preferred tone: ${profile.tone || 'professional'}`);
+        parts.push(`IMPORTANT: Every outreach email MUST include the sender's name, company, and a clear CTA. If a calendar link is provided, use it as the CTA. Reference specific details about the prospect's business. Never use placeholder brackets like [Name] or [Company]. Keep emails under 150 words. Include the website link in the signature.`);
+        parts.push(`=== END SENDER PROFILE ===\n`);
+        profileContext = parts.join('\n');
+      }
+
+      // Include scraped contact emails directly so Command has them
+      const commandContactData = sharedSearchContext.includes('CONTACT INFO')
+        ? '\n\n' + sharedSearchContext.substring(sharedSearchContext.indexOf('=== CONTACT INFO'))
+        : '';
+      const commandInput = `${profileContext}Here is the combined output from all upstream agents. Compile this into the structured JSON dashboard format. IMPORTANT: Use the REAL email addresses from the CONTACT INFO section below. Do NOT output "Not available" if an email exists in the contact data.${commandContactData}\n\n${combinedParts.join('\n')}`;
 
       const stepStart = Date.now();
       console.log(`[LIVE] Agent ${stepOrder + 1}: Command (final aggregator, max 4000 tokens)...`);

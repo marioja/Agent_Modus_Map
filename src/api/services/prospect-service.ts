@@ -36,6 +36,7 @@ export interface Prospect {
     professional: string;
     conversational: string;
     valueLead: string;
+    direct: string;
   };
   sourceRunId: string;
   createdAt: string;
@@ -258,6 +259,7 @@ function normalizeProspectData(raw: Record<string, unknown>): Omit<Prospect, 'id
     professional: (outreachObj.professional as string) ?? '',
     conversational: (outreachObj.conversational as string) ?? '',
     valueLead: (outreachObj.valueLead as string) ?? (outreachObj.value_lead as string) ?? '',
+    direct: (outreachObj.direct as string) ?? '',
   };
 
   // Score

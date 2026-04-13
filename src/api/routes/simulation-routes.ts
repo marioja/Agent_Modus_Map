@@ -3,7 +3,7 @@ import type Database from 'better-sqlite3';
 import { SwarmService } from '../services/swarm-service.js';
 import { runMockSimulation } from '../services/simulation-service.js';
 import { estimateSwarmCost } from '../services/cost-estimation-service.js';
-import { deploySwarm, pauseSwarm, resumeSwarm, stopSwarm, getDeployStatus, getRunHistory, getAllDeployments, getAllResults, setRuntimeDb } from '../services/swarm-runtime-service.js';
+import { deploySwarm, pauseSwarm, resumeSwarm, stopSwarm, getDeployStatus, getRunHistory, getAllDeployments, getAllResults, setRuntimeDb, deleteRunResult, clearRunHistory } from '../services/swarm-runtime-service.js';
 import { runLiveExecution, runLiveExecutionStreaming, previewSearch } from '../services/live-execution-service.js';
 import { generateSwarmPackage } from '../services/swarm-export-service.js';
 
@@ -142,6 +142,26 @@ export function createSimulationRoutes(db: Database.Database): Router {
   router.get('/:swarmId/deploy/results', (req, res) => {
     const results = getRunHistory(req.params.swarmId);
     res.json({ data: results });
+  });
+
+  // DELETE /api/simulate/:swarmId/deploy/results/:resultId
+  router.delete('/:swarmId/deploy/results/:resultId', (req, res) => {
+    try {
+      deleteRunResult(req.params.resultId as string);
+      res.status(204).send();
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // DELETE /api/simulate/:swarmId/deploy/results - clear all results
+  router.delete('/:swarmId/deploy/results', (req, res) => {
+    try {
+      clearRunHistory(req.params.swarmId as string);
+      res.status(204).send();
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
   });
 
   // GET /api/simulate/deployments - all active deployments

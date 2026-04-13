@@ -6,7 +6,7 @@ export class SwarmService {
   constructor(private db: Database.Database) {}
 
   findAll(): Swarm[] {
-    const swarms = this.db.prepare('SELECT * FROM swarms ORDER BY created_at DESC').all() as any[];
+    const swarms = this.db.prepare('SELECT * FROM swarms ORDER BY updated_at DESC').all() as any[];
     return swarms.map(s => this.loadSwarm(s.id)!);
   }
 
@@ -258,7 +258,7 @@ export class SwarmService {
     };
   }
 
-  private touchSwarm(swarmId: string): void {
+  touchSwarm(swarmId: string): void {
     this.db.prepare("UPDATE swarms SET updated_at = datetime('now'), version = version + 1 WHERE id = ?").run(swarmId);
   }
 }
