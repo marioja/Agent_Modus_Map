@@ -492,6 +492,11 @@ export async function runLiveTestStreaming(
   return runLiveTest(swarmId, input);
 }
 
+// AI Copilot
+export async function askCopilot(messages: Array<{ role: string; content: string }>, swarmId?: string): Promise<{ answer: string }> {
+  return postJson('/intelligence/copilot', { messages, swarmId });
+}
+
 // Health check with LLM status
 export async function getApiHealth(): Promise<{ status: string; llmAvailable: boolean }> {
   return fetchJson('/health');

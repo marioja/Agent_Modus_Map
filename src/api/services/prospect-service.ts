@@ -163,10 +163,13 @@ function prospectToMetadata(prospect: Omit<Prospect, 'id'>): Record<string, unkn
 function extractJSON(raw: string): unknown {
   let cleaned = raw.trim();
 
-  // Strip ```json ... ``` fences
+  // Strip ```json ... ``` fences (handle missing closing fence for truncated output)
   const fenceMatch = cleaned.match(/```(?:json)?\s*([\s\S]*?)```/);
   if (fenceMatch) {
     cleaned = fenceMatch[1].trim();
+  } else if (cleaned.startsWith('```')) {
+    // Opening fence but no closing fence (truncated output)
+    cleaned = cleaned.replace(/^```(?:json)?\s*/, '').trim();
   }
 
   // Try parsing as-is first
@@ -193,7 +196,41 @@ function extractJSON(raw: string): unknown {
         break;
       }
     }
-    if (end === -1) throw new Error('Malformed JSON in output');
+    if (end === -1) {
+      // JSON was truncated (hit token limit). Try to repair by closing open brackets.
+      let truncated = cleaned.slice(idx);
+      // Count open/close braces and brackets
+      let openBraces = 0;
+      let openBrackets = 0;
+      for (const ch of truncated) {
+        if (ch === '{') openBraces++;
+        if (ch === '}') openBraces--;
+        if (ch === '[') openBrackets++;
+        if (ch === ']') openBrackets--;
+      }
+      // Try to close the JSON: strip trailing partial content, then close
+      // Find the last complete property (ends with } or ])
+      const lastComplete = Math.max(truncated.lastIndexOf('},'), truncated.lastIndexOf('}]'), truncated.lastIndexOf('}'));
+      if (lastComplete > 0) {
+        truncated = truncated.slice(0, lastComplete + 1);
+        // Recount
+        openBraces = 0;
+        openBrackets = 0;
+        for (const ch of truncated) {
+          if (ch === '{') openBraces++;
+          if (ch === '}') openBraces--;
+          if (ch === '[') openBrackets++;
+          if (ch === ']') openBrackets--;
+        }
+      }
+      // Close remaining open structures
+      truncated += ']'.repeat(Math.max(0, openBrackets)) + '}'.repeat(Math.max(0, openBraces));
+      try {
+        return JSON.parse(truncated);
+      } catch {
+        throw new Error('Malformed JSON in output');
+      }
+    }
     return JSON.parse(cleaned.slice(idx, end + 1));
   }
 }
@@ -206,64 +243,82 @@ function normalizeProspectData(raw: Record<string, unknown>): Omit<Prospect, 'id
   const companyObj = raw.company as Record<string, unknown> | string | undefined;
   const isCompanyObj = typeof companyObj === 'object' && companyObj !== null;
 
+  // Helper to check multiple field name variants (camelCase, snake_case, etc.)
+  const get = (obj: Record<string, unknown>, ...keys: string[]): string => {
+    for (const k of keys) {
+      if (obj[k] != null && obj[k] !== '') return String(obj[k]);
+    }
+    return '';
+  };
+
   const company = isCompanyObj
-    ? (companyObj as Record<string, unknown>).name as string
-    : (raw.companyName as string) ?? (raw.company as string) ?? '';
+    ? get(companyObj as Record<string, unknown>, 'name')
+    : get(raw, 'companyName', 'company_name', 'company');
 
   const website = isCompanyObj
-    ? ((companyObj as Record<string, unknown>).website as string) ?? ''
-    : (raw.website as string) ?? '';
+    ? get(companyObj as Record<string, unknown>, 'website', 'website_url')
+    : get(raw, 'website', 'website_url');
 
   const linkedin = isCompanyObj
-    ? ((companyObj as Record<string, unknown>).linkedin as string) ?? ''
-    : (raw.linkedin as string) ?? (raw.companyLinkedIn as string) ?? '';
+    ? get(companyObj as Record<string, unknown>, 'linkedin', 'linkedinUrl', 'linkedin_url', 'linkedinCompanyUrl', 'linkedin_company_url')
+    : get(raw, 'linkedin', 'linkedinUrl', 'linkedin_url', 'linkedinCompanyUrl', 'linkedin_company_url', 'companyLinkedIn');
 
   const industry = isCompanyObj
-    ? ((companyObj as Record<string, unknown>).industry as string) ?? ''
-    : (raw.industry as string) ?? '';
+    ? get(companyObj as Record<string, unknown>, 'industry')
+    : get(raw, 'industry');
 
   const location = isCompanyObj
-    ? ((companyObj as Record<string, unknown>).location as string) ?? ''
-    : (raw.location as string) ?? '';
+    ? get(companyObj as Record<string, unknown>, 'location')
+    : get(raw, 'location');
 
   const employees = isCompanyObj
-    ? String((companyObj as Record<string, unknown>).employees ?? '')
-    : String(raw.employees ?? '');
+    ? get(companyObj as Record<string, unknown>, 'employees', 'employeeCount', 'employee_count')
+    : get(raw, 'employees', 'employeeCount', 'employee_count');
 
   const revenue = isCompanyObj
-    ? String((companyObj as Record<string, unknown>).revenue ?? '')
-    : String(raw.revenue ?? '');
+    ? get(companyObj as Record<string, unknown>, 'revenue', 'revenueEstimate', 'revenue_estimate')
+    : get(raw, 'revenue', 'revenueEstimate', 'revenue_estimate');
 
   // Contact can be an object or flat fields
   const contactObj = raw.contact as Record<string, unknown> | undefined;
 
   const contactName = contactObj
-    ? (contactObj.name as string) ?? ''
-    : (raw.contactName as string) ?? '';
+    ? get(contactObj, 'name')
+    : get(raw, 'contactName', 'contact_name');
 
   const contactTitle = contactObj
-    ? (contactObj.title as string) ?? ''
-    : (raw.contactTitle as string) ?? '';
+    ? get(contactObj, 'title', 'position')
+    : get(raw, 'contactTitle', 'contact_title');
 
   const contactLinkedIn = contactObj
-    ? (contactObj.linkedin as string) ?? ''
-    : (raw.contactLinkedIn as string) ?? (raw.contactLinkedin as string) ?? '';
+    ? get(contactObj, 'linkedin', 'linkedinUrl', 'linkedin_url')
+    : get(raw, 'contactLinkedIn', 'contactLinkedin', 'contact_linkedin_url', 'contact_linkedin');
 
   const contactEmail = contactObj
-    ? (contactObj.email as string) ?? ''
-    : (raw.contactEmail as string) ?? '';
+    ? get(contactObj, 'email')
+    : get(raw, 'contactEmail', 'contact_email');
 
   // Outreach emails
-  const outreachObj = (raw.outreachEmails ?? raw.outreach ?? {}) as Record<string, unknown>;
+  const outreachObj = (raw.outreachEmails ?? raw.outreach_emails ?? raw.outreach ?? {}) as Record<string, unknown>;
+  // Outreach values can be strings or { subject, body } objects
+  const fmtEmail = (val: unknown): string => {
+    if (!val) return '';
+    if (typeof val === 'string') return val;
+    const obj = val as Record<string, unknown>;
+    const parts: string[] = [];
+    if (obj.subject) parts.push(`Subject: ${obj.subject}`);
+    if (obj.body) parts.push(String(obj.body));
+    return parts.join('\n\n') || '';
+  };
   const outreach = {
-    professional: (outreachObj.professional as string) ?? '',
-    conversational: (outreachObj.conversational as string) ?? '',
-    valueLead: (outreachObj.valueLead as string) ?? (outreachObj.value_lead as string) ?? '',
-    direct: (outreachObj.direct as string) ?? '',
+    professional: fmtEmail(outreachObj.professional),
+    conversational: fmtEmail(outreachObj.conversational),
+    valueLead: fmtEmail(outreachObj.valueLead) || fmtEmail(outreachObj.value_lead),
+    direct: fmtEmail(outreachObj.direct),
   };
 
   // Score
-  const score = (raw.leadScore as number) ?? (raw.score as number) ?? 0;
+  const score = (raw.leadScore as number) ?? (raw.lead_score as number) ?? (raw.score as number) ?? 0;
 
   // Signals
   let signals: string[] = [];
@@ -271,6 +326,8 @@ function normalizeProspectData(raw: Record<string, unknown>): Omit<Prospect, 'id
     signals = raw.signals.map(String);
   } else if (Array.isArray(raw.buyingSignals)) {
     signals = raw.buyingSignals.map(String);
+  } else if (Array.isArray(raw.buying_signals)) {
+    signals = raw.buying_signals.map(String);
   }
 
   return {
@@ -287,7 +344,7 @@ function normalizeProspectData(raw: Record<string, unknown>): Omit<Prospect, 'id
     contactName,
     contactTitle,
     contactLinkedIn,
-    contactEmail,
+    contactEmail: contactEmail.includes('Not ') || contactEmail === 'N/A' ? '' : contactEmail,
     outreach,
     sourceRunId: '',
     notes: '',
@@ -324,7 +381,14 @@ export class ProspectService {
     const existing = await this.findByCompany(data.company);
 
     if (existing) {
-      if (data.score > existing.score) {
+      // Update if: higher score, OR new data has contact info the old one lacks
+      const hasNewContactInfo = (data.contactEmail && data.contactEmail.includes('@') && (!existing.contactEmail || !existing.contactEmail.includes('@')))
+        || (data.contactName && data.contactName !== existing.contactName && !data.contactName.includes('Not'));
+      if (data.score > existing.score || hasNewContactInfo) {
+        // Merge: keep the best of both
+        if (!data.contactEmail || !data.contactEmail.includes('@')) data.contactEmail = existing.contactEmail;
+        if (!data.contactName || data.contactName.includes('Not')) data.contactName = existing.contactName;
+        if (!data.contactTitle || data.contactTitle.includes('Not')) data.contactTitle = existing.contactTitle;
         // Higher score, update by delete + re-insert
         await db.delete(existing.id);
         const metadata = prospectToMetadata({

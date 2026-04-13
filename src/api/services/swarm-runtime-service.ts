@@ -178,9 +178,56 @@ async function executeRun(swarmId: string, swarmService: SwarmService): Promise<
         const saved = await saveProspectsFromRun(runResult.id, commandStep.output);
         console.log(`[RUNTIME] Saved ${saved.newCount} new, ${saved.updatedCount} updated prospects to database`);
 
-        // Auto-enrich: find emails via Hunter.io for prospects missing them
+        // Auto-enrich Step 1: Find websites for prospects that don't have them
+        const tavilyKey = process.env.TAVILY_API_KEY;
+        if (tavilyKey && saved.newCount > 0) {
+          try {
+            const allProspects = await getAllProspects();
+            const needsWebsite = allProspects.filter((p: any) =>
+              !p.website || p.website.includes('Not') || !p.website.includes('http')
+            );
+            let websitesFound = 0;
+            for (const prospect of needsWebsite.slice(0, 10)) {
+              try {
+                const searchRes = await fetch('https://api.tavily.com/search', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    api_key: tavilyKey,
+                    query: `${prospect.company} ${prospect.location || ''} official website`,
+                    max_results: 3,
+                    search_depth: 'basic',
+                  }),
+                });
+                if (searchRes.ok) {
+                  const searchData = await searchRes.json() as any;
+                  const results = (searchData.results || [])
+                    .filter((r: any) => {
+                      const url = (r.url || '').toLowerCase();
+                      return !url.includes('linkedin.com') && !url.includes('yelp.com') &&
+                             !url.includes('facebook.com') && !url.includes('findlaw.com') &&
+                             !url.includes('avvo.com') && !url.includes('bbb.org') &&
+                             !url.includes('glassdoor') && !url.includes('indeed.com') &&
+                             !url.includes('yellowpages') && !url.includes('mapquest');
+                    });
+                  if (results.length > 0) {
+                    const website = results[0].url;
+                    await saveProspect({ ...prospect, website });
+                    websitesFound++;
+                    console.log(`[RUNTIME] Found website for ${prospect.company}: ${website}`);
+                  }
+                }
+              } catch { /* skip */ }
+            }
+            if (websitesFound > 0) console.log(`[RUNTIME] Found ${websitesFound} websites for prospects`);
+          } catch (err) {
+            console.log('[RUNTIME] Website discovery failed:', (err as Error).message);
+          }
+        }
+
+        // Auto-enrich Step 2: Find emails via website scraping + Hunter.io
         const hunterKey = process.env.HUNTER_API_KEY;
-        if (hunterKey && saved.newCount > 0) {
+        if (saved.newCount > 0) {
           try {
             const allProspects = await getAllProspects();
             const needsEmail = allProspects.filter((p: any) =>
@@ -193,6 +240,34 @@ async function executeRun(swarmId: string, swarmService: SwarmService): Promise<
                 try { domain = new URL(prospect.website).hostname.replace(/^www\./, ''); } catch {}
               }
               if (!domain) continue;
+
+              // Try website scraping first
+              if (tavilyKey) {
+                try {
+                  const base = prospect.website.replace(/\/$/, '');
+                  const extractRes = await fetch('https://api.tavily.com/extract', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ api_key: tavilyKey, urls: [base, base + '/contact', base + '/about'] }),
+                  });
+                  if (extractRes.ok) {
+                    const extractData = await extractRes.json() as any;
+                    const content = (extractData.results || []).map((r: any) => r.raw_content || '').join('\n');
+                    const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+                    const found: string[] = (content.match(emailRegex) || [])
+                      .filter((e: string) => !e.includes('example.com') && !e.includes('sentry') && !e.startsWith('email@') && !e.startsWith('not@'));
+                    if (found.length > 0) {
+                      await saveProspect({ ...prospect, contactEmail: found[0] });
+                      enriched++;
+                      console.log(`[RUNTIME] Scraped email for ${prospect.company}: ${found[0]}`);
+                      continue;
+                    }
+                  }
+                } catch { /* fall through to Hunter */ }
+              }
+
+              // Then try Hunter
+              if (!hunterKey) continue;
               try {
                 const r = await fetch(`https://api.hunter.io/v2/domain-search?domain=${encodeURIComponent(domain)}&api_key=${hunterKey}&limit=5`);
                 if (r.ok) {

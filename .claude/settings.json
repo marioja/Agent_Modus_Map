@@ -1,4 +1,70 @@
 {
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
+    "CLAUDE_FLOW_V3_ENABLED": "true",
+    "CLAUDE_FLOW_HOOKS_ENABLED": "true",
+    "AQE_MEMORY_PATH": ".agentic-qe/memory.db",
+    "AQE_MEMORY_ENABLED": "true",
+    "AQE_LEARNING_ENABLED": "true",
+    "AQE_V3_MODE": "true",
+    "AQE_V3_DDD_ENABLED": "true",
+    "AQE_V3_DOMAINS": "test-generation,test-execution,coverage-analysis,quality-assessment,defect-intelligence,requirements-validation,code-intelligence,security-compliance,contract-testing,visual-accessibility,chaos-resilience,learning-optimization,enterprise-integration",
+    "AQE_V3_SWARM_SIZE": "5",
+    "AQE_V3_TOPOLOGY": "hierarchical",
+    "AQE_V3_SUBLINEAR_ENABLED": "true",
+    "AQE_V3_HNSW_ENABLED": "true",
+    "AQE_V3_HOOKS_ENABLED": "true",
+    "AQE_V3_AISP_ENABLED": "true",
+    "AQE_V3_REASONING_BANK": ".agentic-qe/memory.db",
+    "AQE_V3_PATTERN_PROMOTION_THRESHOLD": "2",
+    "AQE_V3_SUCCESS_RATE_THRESHOLD": "0.5"
+  },
+  "attribution": {
+    "commit": "Co-Authored-By: claude-flow <ruv@ruv.net>",
+    "pr": "🤖 Generated with [claude-flow](https://github.com/ruvnet/claude-flow)"
+  },
+  "includeCoAuthoredBy": true,
+  "permissions": {
+    "allow": [
+      "Bash(npx claude-flow:*)",
+      "Bash(npx @claude-flow/cli:*)",
+      "Bash(npm:*)",
+      "Bash(node:*)",
+      "Bash(npx:*)",
+      "Bash(git:*)",
+      "Bash(curl:*)",
+      "Bash(ls:*)",
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Bash(sed:*)",
+      "Bash(mv:*)",
+      "Bash(cp:*)",
+      "Bash(rm:*)",
+      "Bash(mkdir:*)",
+      "Bash(cat:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(wc:*)",
+      "Bash(echo:*)",
+      "Bash(sleep:*)",
+      "Bash(kill:*)",
+      "Bash(lsof:*)",
+      "Bash(open:*)",
+      "Bash(sqlite3:*)",
+      "Bash(time:*)",
+      "Bash(sort:*)",
+      "Bash(python3:*)",
+      "mcp__claude-flow__:*",
+      "mcp__agentic_qe__*",
+      "Read(//Users/annecantera/**)"
+    ],
+    "deny": [
+      "Bash(rm -rf /)"
+    ]
+  },
+  "enabledMcpjsonServers": [
+    "agentic-qe"
+  ],
   "hooks": {
     "PreToolUse": [
       {
@@ -7,8 +73,7 @@
           {
             "type": "command",
             "command": "npx agentic-qe hooks guard --file \"$TOOL_INPUT_file_path\" --json",
-            "timeout": 3000,
-            "continueOnError": true
+            "timeout": 3000
           }
         ]
       },
@@ -18,8 +83,7 @@
           {
             "type": "command",
             "command": "npx agentic-qe hooks pre-edit --file \"$TOOL_INPUT_file_path\" --json",
-            "timeout": 5000,
-            "continueOnError": true
+            "timeout": 5000
           }
         ]
       },
@@ -29,8 +93,7 @@
           {
             "type": "command",
             "command": "npx agentic-qe hooks pre-command --command \"$TOOL_INPUT_command\" --json",
-            "timeout": 3000,
-            "continueOnError": true
+            "timeout": 3000
           }
         ]
       },
@@ -40,8 +103,7 @@
           {
             "type": "command",
             "command": "npx agentic-qe hooks pre-task --description \"$TOOL_INPUT_prompt\" --json",
-            "timeout": 5000,
-            "continueOnError": true
+            "timeout": 5000
           }
         ]
       }
@@ -53,8 +115,7 @@
           {
             "type": "command",
             "command": "npx agentic-qe hooks post-edit --file \"$TOOL_INPUT_file_path\" --success --json",
-            "timeout": 5000,
-            "continueOnError": true
+            "timeout": 5000
           }
         ]
       },
@@ -64,8 +125,7 @@
           {
             "type": "command",
             "command": "npx agentic-qe hooks post-command --command \"$TOOL_INPUT_command\" --success --json",
-            "timeout": 5000,
-            "continueOnError": true
+            "timeout": 5000
           }
         ]
       },
@@ -75,8 +135,7 @@
           {
             "type": "command",
             "command": "npx agentic-qe hooks post-task --task-id \"$TOOL_RESULT_agent_id\" --success --json",
-            "timeout": 5000,
-            "continueOnError": true
+            "timeout": 5000
           }
         ]
       }
@@ -87,8 +146,7 @@
           {
             "type": "command",
             "command": "npx agentic-qe hooks route --task \"$PROMPT\" --json",
-            "timeout": 5000,
-            "continueOnError": true
+            "timeout": 5000
           }
         ]
       }
@@ -99,8 +157,7 @@
           {
             "type": "command",
             "command": "npx agentic-qe hooks session-start --session-id \"$SESSION_ID\" --json",
-            "timeout": 10000,
-            "continueOnError": true
+            "timeout": 10000
           }
         ]
       },
@@ -109,8 +166,7 @@
           {
             "type": "command",
             "command": "node \"$(git rev-parse --show-toplevel 2>/dev/null || pwd)/.claude/helpers/brain-checkpoint.cjs\" verify --json",
-            "timeout": 5000,
-            "continueOnError": true
+            "timeout": 5000
           }
         ]
       }
@@ -121,8 +177,7 @@
           {
             "type": "command",
             "command": "npx agentic-qe hooks session-end --save-state --json",
-            "timeout": 5000,
-            "continueOnError": true
+            "timeout": 5000
           }
         ]
       },
@@ -131,8 +186,7 @@
           {
             "type": "command",
             "command": "node \"$(git rev-parse --show-toplevel 2>/dev/null || pwd)/.claude/helpers/brain-checkpoint.cjs\" export --json",
-            "timeout": 60000,
-            "continueOnError": true
+            "timeout": 60000
           }
         ]
       }
@@ -214,70 +268,7 @@
   },
   "statusLine": {
     "type": "command",
-    "command": "node \"$(git rev-parse --show-toplevel 2>/dev/null || pwd)/.claude/helpers/statusline-v3.cjs\" 2>/dev/null || echo \"▊ Agentic QE v3\"",
-    "refreshMs": 5000,
-    "enabled": true
-  },
-  "permissions": {
-    "allow": [
-      "Bash(npx claude-flow:*)",
-      "Bash(npx @claude-flow/cli:*)",
-      "Bash(npm:*)",
-      "Bash(node:*)",
-      "Bash(npx:*)",
-      "Bash(git:*)",
-      "Bash(curl:*)",
-      "Bash(ls:*)",
-      "Bash(find:*)",
-      "Bash(grep:*)",
-      "Bash(sed:*)",
-      "Bash(mv:*)",
-      "Bash(cp:*)",
-      "Bash(rm:*)",
-      "Bash(mkdir:*)",
-      "Bash(cat:*)",
-      "Bash(head:*)",
-      "Bash(tail:*)",
-      "Bash(wc:*)",
-      "Bash(echo:*)",
-      "Bash(sleep:*)",
-      "Bash(kill:*)",
-      "Bash(lsof:*)",
-      "Bash(open:*)",
-      "Bash(sqlite3:*)",
-      "Bash(time:*)",
-      "Bash(sort:*)",
-      "Bash(python3:*)",
-      "mcp__claude-flow__:*",
-      "mcp__agentic_qe__*"
-    ],
-    "deny": [
-      "Bash(rm -rf /)"
-    ]
-  },
-  "attribution": {
-    "commit": "Co-Authored-By: claude-flow <ruv@ruv.net>",
-    "pr": "🤖 Generated with [claude-flow](https://github.com/ruvnet/claude-flow)"
-  },
-  "env": {
-    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
-    "CLAUDE_FLOW_V3_ENABLED": "true",
-    "CLAUDE_FLOW_HOOKS_ENABLED": "true",
-    "AQE_MEMORY_PATH": ".agentic-qe/memory.db",
-    "AQE_MEMORY_ENABLED": "true",
-    "AQE_LEARNING_ENABLED": "true",
-    "AQE_V3_MODE": "true",
-    "AQE_V3_DDD_ENABLED": "true",
-    "AQE_V3_DOMAINS": "test-generation,test-execution,coverage-analysis,quality-assessment,defect-intelligence,requirements-validation,code-intelligence,security-compliance,contract-testing,visual-accessibility,chaos-resilience,learning-optimization,enterprise-integration",
-    "AQE_V3_SWARM_SIZE": "5",
-    "AQE_V3_TOPOLOGY": "hierarchical",
-    "AQE_V3_SUBLINEAR_ENABLED": "true",
-    "AQE_V3_HNSW_ENABLED": "true",
-    "AQE_V3_HOOKS_ENABLED": "true",
-    "AQE_V3_AISP_ENABLED": "true",
-    "AQE_V3_REASONING_BANK": ".agentic-qe/memory.db",
-    "AQE_V3_PATTERN_PROMOTION_THRESHOLD": "2",
-    "AQE_V3_SUCCESS_RATE_THRESHOLD": "0.5"
+    "command": "node \"$(git rev-parse --show-toplevel 2>/dev/null || pwd)/.claude/helpers/statusline-v3.cjs\" 2>/dev/null || echo \"▊ Agentic QE v3\""
   },
   "claudeFlow": {
     "version": "3.0.0",
@@ -418,7 +409,6 @@
     "initialized": "2026-03-16T13:19:22.611Z",
     "hooksConfigured": true
   },
-  "includeCoAuthoredBy": true,
   "v3Configuration": {
     "domains": {
       "total": 13,
@@ -454,8 +444,5 @@
       "threshold": 2,
       "successRateMin": 0.5
     }
-  },
-  "enabledMcpjsonServers": [
-    "agentic-qe"
-  ]
+  }
 }

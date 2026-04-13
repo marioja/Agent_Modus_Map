@@ -1,13 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { askQuestion, type RAGResponse } from '../api.js';
+import { askCopilot } from '../api.js';
 import { Logo } from './Logo.js';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
-  sources?: RAGResponse['sources'];
-  graphHighlights?: string[];
-  queryType?: string;
 }
 
 interface ChatPanelProps {
@@ -20,7 +17,7 @@ interface ChatPanelProps {
 export function ChatPanel({ swarmId, isOpen, onToggle, onHighlightAgents }: ChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([{
     role: 'assistant',
-    content: 'Ask me anything about your swarm. Try:\n- "What happens if Catalog goes down?"\n- "What are the bottlenecks?"\n- "How should I handle failover?"\n- "Path from Domino to Courier"',
+    content: 'Hey, I\'m the Agent Modus copilot. I can help you with anything:\n\n- "Help me set up a lead gen swarm"\n- "How do I add my API keys?"\n- "What does each agent do?"\n- "Why isn\'t my deploy returning good results?"\n- "Help me write a better search query"',
   }]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -39,22 +36,19 @@ export function ChatPanel({ swarmId, isOpen, onToggle, onHighlightAgents }: Chat
     setLoading(true);
 
     try {
-      const response = await askQuestion(swarmId, question);
+      // Build conversation history for the copilot (exclude the welcome message)
+      const history = [...messages.slice(1), { role: 'user' as const, content: question }]
+        .map(m => ({ role: m.role, content: m.content }));
+
+      const response = await askCopilot(history, swarmId);
       setMessages(prev => [...prev, {
         role: 'assistant',
         content: response.answer,
-        sources: response.sources,
-        graphHighlights: response.graphHighlights,
-        queryType: response.queryType,
       }]);
-
-      if (response.graphHighlights.length > 0 && onHighlightAgents) {
-        onHighlightAgents(response.graphHighlights);
-      }
     } catch {
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: 'Something went wrong. Please try again.',
+        content: 'I need a Claude API key to work. Go to Settings and add your Anthropic API key.',
       }]);
     } finally {
       setLoading(false);
@@ -112,7 +106,7 @@ export function ChatPanel({ swarmId, isOpen, onToggle, onHighlightAgents }: Chat
         justifyContent: 'space-between',
         alignItems: 'center',
       }}>
-        <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-accent)' }}>Ask Your Swarm</span>
+        <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-accent)' }}>Copilot</span>
         <button onClick={onToggle} style={{
           background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: 18,
         }}>{'\u00D7'}</button>
@@ -138,24 +132,6 @@ export function ChatPanel({ swarmId, isOpen, onToggle, onHighlightAgents }: Chat
                 {msg.content}
               </div>
 
-              {msg.sources && msg.sources.length > 0 && (
-                <div style={{ marginTop: 8, borderTop: '1px solid var(--border-subtle)', paddingTop: 6 }}>
-                  <div style={{ fontSize: 10, color: 'var(--text-secondary)', marginBottom: 4 }}>Sources:</div>
-                  {msg.sources.map((s, j) => (
-                    <div key={j} style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 2 }}>
-                      {s.title}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {msg.queryType && (
-                <div style={{ marginTop: 4, fontSize: 10, color: 'var(--text-secondary)' }}>
-                  {msg.queryType === 'graph' ? 'From your swarm data' :
-                   msg.queryType === 'both' ? 'Swarm data + best practices' :
-                   'From best practices'}
-                </div>
-              )}
             </div>
           </div>
         ))}

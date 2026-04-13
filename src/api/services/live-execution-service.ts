@@ -507,7 +507,7 @@ site:inc.com OR site:bloomberg.com "Long Island" women business owner
       try {
         const response = await client.messages.create({
           model: 'claude-haiku-4-5-20251001',
-          max_tokens: 4000,
+          max_tokens: 8000,
           temperature: 0.3,
           system: systemPrompt,
           messages: [{ role: 'user', content: commandInput.slice(0, 12000) }],
