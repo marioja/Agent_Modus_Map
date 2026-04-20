@@ -128,9 +128,16 @@ export function InterviewPanel({ onClose, onSwarmCreated }: InterviewPanelProps)
         setSwarmConfig(result.swarmConfig);
       }
     } catch (err: any) {
+      const errorMsg = err.message || 'Unknown error';
+      const isCredits = errorMsg.includes('credit') || errorMsg.includes('balance');
+      const isNotFound = errorMsg.includes('404') || errorMsg.includes('not found');
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: 'Something went wrong sending that message. Please try again.',
+        content: isCredits
+          ? 'Your API credits ran out. Add more credits at console.anthropic.com to continue.'
+          : isNotFound
+            ? 'This interview session expired. Close and start a new one.'
+            : `Something went wrong: ${errorMsg}. Try again or start a new interview.`,
       }]);
     } finally {
       setLoading(false);
@@ -361,7 +368,7 @@ export function InterviewPanel({ onClose, onSwarmCreated }: InterviewPanelProps)
         <button
           onClick={onClose}
           style={{
-            position: 'absolute',
+            position: 'fixed',
             top: 16,
             right: 16,
             width: 36,
@@ -375,7 +382,7 @@ export function InterviewPanel({ onClose, onSwarmCreated }: InterviewPanelProps)
             alignItems: 'center',
             justifyContent: 'center',
             fontSize: 18,
-            zIndex: 10,
+            zIndex: 1010,
             transition: 'color 0.2s, border-color 0.2s',
           }}
           onMouseEnter={e => {
