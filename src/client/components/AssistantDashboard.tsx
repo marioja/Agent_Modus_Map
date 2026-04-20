@@ -556,15 +556,14 @@ export function AssistantDashboard({ swarmId, onClose }: AssistantDashboardProps
         {/* Middle: Workspace */}
         <div style={s.middleCol}>
           <div style={{ display: 'flex', borderBottom: '1px solid var(--border-default, #1e293b)', background: 'var(--bg-elevated, #111827)' }}>
-            {(['inbox', 'tasks', 'documents'] as const).map(tab => (
+            {(['inbox', 'tasks'] as const).map(tab => (
               <button key={tab} onClick={() => setActiveTab(tab)} style={s.tab(activeTab === tab)}>
-                {tab === 'inbox' ? 'Transcripts' : tab === 'tasks' ? 'Tasks' : 'Ask'}
+                {tab === 'inbox' ? 'Transcripts' : 'Tasks'}
               </button>
             ))}
           </div>
           {activeTab === 'inbox' && renderInbox()}
           {activeTab === 'tasks' && renderKanban()}
-          {activeTab === 'documents' && renderDocuments()}
         </div>
 
         {/* Right: Chat */}
