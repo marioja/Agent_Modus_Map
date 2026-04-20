@@ -21,6 +21,7 @@ import { KeyboardShortcutsHelp } from './components/KeyboardShortcutsHelp.js';
 import { InterviewPanel } from './components/InterviewPanel.js';
 import { LoginPage } from './components/LoginPage.js';
 import { PricingPage } from './components/PricingPage.js';
+import { AssistantDashboard } from './components/AssistantDashboard.js';
 import { CollaborationCursors } from './components/CollaborationCursors.js';
 import { useCollaboration } from './hooks/useCollaboration.js';
 import {
@@ -59,6 +60,7 @@ export function App() {
   const [editorMode, setEditorMode] = useState<EditorMode>('build');
   const [showInterview, setShowInterview] = useState(false);
   const [resumeInterviewId, setResumeInterviewId] = useState<string | undefined>();
+  const [assistantSwarmId, setAssistantSwarmId] = useState<string | null>(null);
 
   // Panel state: only one panel open at a time (except editor modal and chat which overlay)
   type Panel = null | 'palette' | 'validation' | 'orchestrator' | 'wizard'
@@ -330,9 +332,16 @@ export function App() {
             onSwarmCreated={(newSwarmId) => {
               setShowInterview(false);
               setResumeInterviewId(undefined);
-              handleOpenSwarm(newSwarmId);
+              // Go straight to the assistant dashboard, not the canvas
+              setAssistantSwarmId(newSwarmId);
             }}
             resumeId={resumeInterviewId}
+          />
+        )}
+        {assistantSwarmId && (
+          <AssistantDashboard
+            swarmId={assistantSwarmId}
+            onClose={() => setAssistantSwarmId(null)}
           />
         )}
         {showOnboarding && <OnboardingOverlay onDismiss={dismissOnboarding} />}
