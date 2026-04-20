@@ -117,8 +117,8 @@ export function Dashboard({ onOpenSwarm, onStartInterview, onResumeInterview, on
     getTemplates().then(setTemplates).catch(console.error);
     getAllResults().then(r => setRecentResults((r || []).slice(0, 5))).catch(() => {});
     listInterviews().then(interviews => {
-      // Only show interviews that aren't complete (phase < 6)
-      setActiveInterviews(interviews.filter(i => i.phase < 6));
+      // Show all interviews that haven't been deployed yet
+      setActiveInterviews(interviews);
     }).catch(() => {});
   }, []);
 
@@ -274,9 +274,9 @@ export function Dashboard({ onOpenSwarm, onStartInterview, onResumeInterview, on
                       </div>
                       <div style={{
                         padding: '4px 10px', borderRadius: 12, fontSize: 11, fontWeight: 600,
-                        background: (interview as any).hasConfig ? 'rgba(34,197,94,0.15)' : 'rgba(0,217,255,0.1)',
-                        color: (interview as any).hasConfig ? '#22c55e' : 'var(--accent-primary)',
-                      }}>{(interview as any).hasConfig ? 'Deploy' : 'Resume'}</div>
+                        background: 'rgba(0,217,255,0.1)',
+                        color: 'var(--accent-primary)',
+                      }}>Continue</div>
                     </button>
                   ))}
                 </div>
