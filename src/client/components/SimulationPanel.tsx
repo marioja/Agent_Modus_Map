@@ -192,12 +192,12 @@ export function SimulationPanel({ swarmId, isOpen, onToggle, onOpenAgent, defaul
     URL.revokeObjectURL(url);
   }
 
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState<string | null>(null);
 
   function copyResults(result: any, type: 'mock' | 'live') {
     doCopyResults(result, type);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setCopied(type);
+    setTimeout(() => setCopied(null), 2000);
   }
 
   function downloadReport(result: any) {
@@ -206,8 +206,8 @@ export function SimulationPanel({ swarmId, isOpen, onToggle, onOpenAgent, defaul
 
   function copyLeadSheet(result: any) {
     doCopyLeadSheet(result);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setCopied('leads');
+    setTimeout(() => setCopied(null), 2000);
   }
 
   async function handleGetCost() {
@@ -234,7 +234,7 @@ export function SimulationPanel({ swarmId, isOpen, onToggle, onOpenAgent, defaul
   };
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 900, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)' }} />
     <div style={{
       position: 'relative',
@@ -242,7 +242,7 @@ export function SimulationPanel({ swarmId, isOpen, onToggle, onOpenAgent, defaul
       maxWidth: tab === 'deploy' ? 1100 : 560,
       maxHeight: tab === 'deploy' ? '90vh' : '85vh',
       background: 'var(--bg-base)', border: '1px solid var(--border-default)', borderRadius: 16,
-      display: 'flex', flexDirection: 'column', zIndex: 1001,
+      display: 'flex', flexDirection: 'column', zIndex: 901,
       boxShadow: '0 20px 60px rgba(0,0,0,0.6)',
       transition: 'width 0.2s ease, max-width 0.2s ease',
     }}>
@@ -259,7 +259,7 @@ export function SimulationPanel({ swarmId, isOpen, onToggle, onOpenAgent, defaul
             }}>{t === 'simulate' ? 'Mock' : t === 'cost' ? 'Cost' : t === 'live' ? 'Live Test' : 'Deploy'}</button>
           ))}
         </div>
-        <button onClick={onToggle} style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer', fontSize: 18 }}>{'\u00D7'}</button>
+        <button onClick={onToggle} aria-label="Close" style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer', fontSize: 18 }}>{'\u00D7'}</button>
       </div>
 
       {/* Body */}
@@ -297,7 +297,7 @@ export function SimulationPanel({ swarmId, isOpen, onToggle, onOpenAgent, defaul
                   marginBottom: 12, padding: '6px 14px', borderRadius: 6, border: '1px solid var(--border-default)',
                   background: 'transparent', color: 'var(--accent-primary)', fontSize: 11, fontWeight: 600,
                   cursor: 'pointer', fontFamily: 'var(--font-primary)', width: '100%',
-                }}>{copied ? 'Copied!' : 'Copy All Results'}</button>
+                }}>{copied === 'mock' ? 'Copied!' : 'Copy All Results'}</button>
 
                 <div style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Execution Trace</div>
                 {simResult.steps.map((step: any, i: number) => (
@@ -427,12 +427,12 @@ export function SimulationPanel({ swarmId, isOpen, onToggle, onOpenAgent, defaul
                     flex: 1, padding: '6px 10px', borderRadius: 6, border: '1px solid var(--border-default)',
                     background: 'transparent', color: 'var(--accent-primary)', fontSize: 11, fontWeight: 600,
                     cursor: 'pointer', fontFamily: 'var(--font-primary)',
-                  }}>{copied ? 'Copied!' : 'Copy All'}</button>
+                  }}>{copied === 'live' ? 'Copied!' : 'Copy All'}</button>
                   <button onClick={() => copyLeadSheet(liveResult)} style={{
                     flex: 1, padding: '6px 10px', borderRadius: 6, border: '1px solid var(--accent-secondary, #a855f7)',
                     background: 'transparent', color: 'var(--accent-secondary, #a855f7)', fontSize: 11, fontWeight: 600,
                     cursor: 'pointer', fontFamily: 'var(--font-primary)',
-                  }}>Copy Leads</button>
+                  }}>{copied === 'leads' ? 'Copied!' : 'Copy Leads'}</button>
                   <button onClick={() => downloadReport(liveResult)} style={{
                     flex: 1, padding: '6px 10px', borderRadius: 6, border: '1px solid var(--border-default)',
                     background: 'transparent', color: 'var(--text-secondary)', fontSize: 11, fontWeight: 600,

@@ -221,7 +221,7 @@ export function AssistantDashboard({ swarmId, onClose }: AssistantDashboardProps
 
   const s = {
     overlay: {
-      position: 'fixed' as const, inset: 0, zIndex: 1000,
+      position: 'fixed' as const, inset: 0, zIndex: 1100,
       background: 'var(--bg-base, #0a0e1a)', color: 'var(--text-primary, #e2e8f0)',
       display: 'flex', flexDirection: 'column' as const, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
     },
@@ -495,7 +495,7 @@ export function AssistantDashboard({ swarmId, onClose }: AssistantDashboardProps
           <span><span style={s.statNum}>{meetings}</span> meetings</span>
           <span><span style={s.statNum}>{followUps}</span> follow-ups due</span>
         </div>
-        <button onClick={onClose} style={s.closeBtn}>X</button>
+        <button onClick={onClose} aria-label="Close" style={s.closeBtn}>X</button>
       </div>
 
       {/* Body */}
@@ -506,7 +506,7 @@ export function AssistantDashboard({ swarmId, onClose }: AssistantDashboardProps
             <div style={s.panel}>
               <div style={s.panelHeader}>
                 <span style={s.panelTitle}>Transcripts</span>
-                <button onClick={() => togglePanel('transcripts')} style={s.panelCloseBtn}>x</button>
+                <button onClick={() => togglePanel('transcripts')} aria-label="Close panel" style={s.panelCloseBtn}>x</button>
               </div>
               {renderInbox()}
             </div>
@@ -515,7 +515,7 @@ export function AssistantDashboard({ swarmId, onClose }: AssistantDashboardProps
             <div style={s.panel}>
               <div style={s.panelHeader}>
                 <span style={s.panelTitle}>Tasks</span>
-                <button onClick={() => togglePanel('tasks')} style={s.panelCloseBtn}>x</button>
+                <button onClick={() => togglePanel('tasks')} aria-label="Close panel" style={s.panelCloseBtn}>x</button>
               </div>
               {renderKanban()}
             </div>
@@ -524,7 +524,7 @@ export function AssistantDashboard({ swarmId, onClose }: AssistantDashboardProps
             <div style={s.panel}>
               <div style={s.panelHeader}>
                 <span style={s.panelTitle}>Calendar</span>
-                <button onClick={() => togglePanel('calendar')} style={s.panelCloseBtn}>x</button>
+                <button onClick={() => togglePanel('calendar')} aria-label="Close panel" style={s.panelCloseBtn}>x</button>
               </div>
               {renderSchedule()}
             </div>

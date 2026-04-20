@@ -180,7 +180,7 @@ export function PricingPage({ onSelectPlan, onClose }: PricingPageProps) {
       flexDirection: 'column',
       alignItems: 'center',
       fontFamily: 'var(--font-primary)',
-      zIndex: 9999,
+      zIndex: 1200,
       overflowY: 'auto',
     }}>
       {/* Close button */}

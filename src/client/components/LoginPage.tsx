@@ -251,7 +251,7 @@ export function LoginPage({ onLogin, onSkip }: LoginPageProps) {
       alignItems: 'center',
       justifyContent: 'center',
       fontFamily: 'var(--font-primary)',
-      zIndex: 9999,
+      zIndex: 1200,
     }}>
       <div style={{
         width: '100%',

@@ -335,8 +335,6 @@ function parseProspectBlock(
     if (postMatch) conversational = postMatch[1].trim().slice(0, 800);
   }
 
-  const slug = company.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+$/, '');
-
   return {
     company,
     website: website || '',
@@ -358,7 +356,6 @@ function parseProspectBlock(
 }
 
 function buildBasicProspect(name: string, combined: string, _qualify: string, _craft: string): Prospect {
-  const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+$/, '');
   const urlMatch = combined.match(new RegExp(`${name.split(/\s+/)[0]}[^\\n]*?(https?://[^\\s)]+)`, 'i'));
   const emailMatch = combined.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
 
@@ -707,7 +704,7 @@ export function ProspectDashboard({ runData, onClose, minScore: minScoreProp, sh
             {isDbMode && (
               <button onClick={handleExportCSV} style={outlineBtnSmallStyle}>Export CSV</button>
             )}
-            <button onClick={onClose} style={closeBtnStyle}>{'\u00D7'}</button>
+            <button onClick={onClose} aria-label="Close" style={closeBtnStyle}>{'\u00D7'}</button>
           </div>
         </div>
 

@@ -201,7 +201,7 @@ export function AgentModusModal({ agent, swarm, layers, onSave, onDelete, onClos
               ))}
             </div>
           </div>
-          <button onClick={onClose} style={{
+          <button onClick={onClose} aria-label="Close" style={{
             width: 36, height: 36, borderRadius: '50%', background: 'var(--bg-elevated)',
             border: '1px solid var(--border-default)', color: 'var(--text-tertiary)', cursor: 'pointer', fontSize: 18,
             display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,

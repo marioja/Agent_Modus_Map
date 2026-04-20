@@ -187,7 +187,7 @@ export function InterviewPanel({ onClose, onSwarmCreated, resumeId }: InterviewP
     <div style={{
       position: 'fixed',
       inset: 0,
-      zIndex: 1000,
+      zIndex: 1050,
       display: 'flex',
       background: 'var(--bg-base)',
       fontFamily: 'var(--font-primary, "Inter", system-ui, sans-serif)',
@@ -395,7 +395,7 @@ export function InterviewPanel({ onClose, onSwarmCreated, resumeId }: InterviewP
             alignItems: 'center',
             justifyContent: 'center',
             fontSize: 18,
-            zIndex: 1010,
+            zIndex: 1051,
             transition: 'color 0.2s, border-color 0.2s',
           }}
           onMouseEnter={e => {
@@ -407,6 +407,7 @@ export function InterviewPanel({ onClose, onSwarmCreated, resumeId }: InterviewP
             e.currentTarget.style.borderColor = 'var(--border-default)';
           }}
           title="Close interview"
+          aria-label="Close"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
             <line x1="18" y1="6" x2="6" y2="18" />
