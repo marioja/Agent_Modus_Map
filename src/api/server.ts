@@ -1,5 +1,7 @@
 import express from 'express';
 import cors from 'cors';
+import path from 'path';
+import fs from 'fs';
 import { getDb } from './db/database.js';
 import { createSwarmRoutes } from './routes/swarm-routes.js';
 import { createIntelligenceRoutes } from './routes/intelligence-routes.js';
@@ -57,6 +59,22 @@ export function createApp(db?: ReturnType<typeof getDb>) {
   app.get('/api/health', (_req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString(), llmAvailable: isLLMAvailable() });
   });
+
+  if (process.env.NODE_ENV === 'production') {
+    const clientDistPath = path.resolve(__dirname, '../../client');
+    if (fs.existsSync(clientDistPath)) {
+      app.use(express.static(clientDistPath));
+      app.get('*', (req, res, next) => {
+        if (req.path.startsWith('/api')) {
+          next();
+          return;
+        }
+        res.sendFile(path.join(clientDistPath, 'index.html'));
+      });
+    } else {
+      console.warn(`Client build not found at ${clientDistPath}. Run "npm run build" first.`);
+    }
+  }
 
   return app;
 }

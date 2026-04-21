@@ -7,5 +7,8 @@
     "noEmit": false,
     "jsx": "react-jsx"
   },
-  "include": ["src/api", "src/shared"]
+  "include": ["src/api", "src/shared"],
+  // Temporary: seed.ts imports src/shared/data/seed-agents.js, which is missing in this repo state.
+  // Keep excluded so production API build/start is not blocked; remove once seed data file is restored.
+  "exclude": ["src/api/db/seed.ts"]
 }
