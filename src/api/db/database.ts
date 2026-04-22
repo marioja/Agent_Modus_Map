@@ -1,5 +1,6 @@
 import Database from 'better-sqlite3';
 import path from 'path';
+import fs from 'fs';
 
 let db: Database.Database | null = null;
 
@@ -7,6 +8,10 @@ export function getDb(dbPath?: string): Database.Database {
   if (db) return db;
 
   const resolvedPath = dbPath || path.join(process.cwd(), 'data', 'agent-modus.db');
+  const dbDir = path.dirname(resolvedPath);
+  if (!fs.existsSync(dbDir)) {
+    fs.mkdirSync(dbDir, { recursive: true });
+  }
   db = new Database(resolvedPath);
   db.pragma('journal_mode = WAL');
   db.pragma('foreign_keys = ON');
