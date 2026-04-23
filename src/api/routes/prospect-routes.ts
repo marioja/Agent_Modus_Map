@@ -15,6 +15,7 @@ import {
   getAllProspects,
 } from '../services/prospect-service.js';
 import { getUserProfile } from './settings-routes.js';
+import { requireCapability } from '../services/license-service.js';
 
 type ProspectStatus =
   | 'new'
@@ -77,7 +78,7 @@ export function createProspectRoutes(): Router {
   });
 
   // GET /api/prospects/export - download CSV
-  router.get('/export', async (_req: Request, res: Response) => {
+  router.get('/export', requireCapability('prospects.export'), async (_req: Request, res: Response) => {
     try {
       const csv = await exportCSV();
       res.setHeader('Content-Type', 'text/csv');

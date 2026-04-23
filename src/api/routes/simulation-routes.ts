@@ -6,6 +6,7 @@ import { estimateSwarmCost } from '../services/cost-estimation-service.js';
 import { deploySwarm, pauseSwarm, resumeSwarm, stopSwarm, getDeployStatus, getRunHistory, getAllDeployments, getAllResults, setRuntimeDb, deleteRunResult, clearRunHistory } from '../services/swarm-runtime-service.js';
 import { runLiveExecution, runLiveExecutionStreaming, previewSearch } from '../services/live-execution-service.js';
 import { generateSwarmPackage } from '../services/swarm-export-service.js';
+import { requireCapability } from '../services/license-service.js';
 
 export function createSimulationRoutes(db: Database.Database): Router {
   const router = Router();
@@ -45,8 +46,8 @@ export function createSimulationRoutes(db: Database.Database): Router {
   });
 
   // POST /api/simulate/:swarmId/live - run live test with real LLM calls
-  router.post('/:swarmId/live', async (req, res) => {
-    const swarm = swarmService.findById(req.params.swarmId);
+  router.post('/:swarmId/live', requireCapability('simulation.live'), async (req, res) => {
+    const swarm = swarmService.findById(String(req.params.swarmId));
     if (!swarm) return res.status(404).json({ error: 'Swarm not found' });
 
     const userInput = req.body.input || 'Process a sample request through this swarm.';
@@ -60,8 +61,8 @@ export function createSimulationRoutes(db: Database.Database): Router {
   });
 
   // POST /api/simulate/:swarmId/live-stream - SSE stream of live test progress
-  router.post('/:swarmId/live-stream', async (req, res) => {
-    const swarm = swarmService.findById(req.params.swarmId);
+  router.post('/:swarmId/live-stream', requireCapability('simulation.live'), async (req, res) => {
+    const swarm = swarmService.findById(String(req.params.swarmId));
     if (!swarm) return res.status(404).json({ error: 'Swarm not found' });
 
     const userInput = req.body.input || 'Process a sample request through this swarm.';
@@ -106,9 +107,12 @@ export function createSimulationRoutes(db: Database.Database): Router {
     if (!query?.trim()) return res.status(400).json({ error: 'Query is required' });
     const validSchedules = ['once', 'hourly', 'daily', 'weekly'];
     if (!validSchedules.includes(schedule)) return res.status(400).json({ error: 'Schedule must be: once, hourly, daily, or weekly' });
-
-    const config = deploySwarm(req.params.swarmId, query.trim(), schedule, swarmService, budgetLimit ? Number(budgetLimit) : undefined);
-    res.json({ data: config });
+    const requiredCapability = schedule === 'once' ? 'deploy.once' : 'deploy.scheduled';
+    const capabilityGuard = requireCapability(requiredCapability);
+    capabilityGuard(req, res, () => {
+      const config = deploySwarm(String(req.params.swarmId), query.trim(), schedule, swarmService, budgetLimit ? Number(budgetLimit) : undefined);
+      res.json({ data: config });
+    });
   });
 
   // POST /api/simulate/:swarmId/deploy/pause

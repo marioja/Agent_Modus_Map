@@ -3,6 +3,7 @@ import type Database from 'better-sqlite3';
 import { generateSwarmMarkdown, generateAgentMarkdown, generateHandoffDocument } from '../services/doc-generation-service.js';
 import { generateStandaloneHTML } from '../services/html-export-service.js';
 import { SwarmService } from '../services/swarm-service.js';
+import { requireCapability } from '../services/license-service.js';
 
 export function createDocGenerationRoutes(db: Database.Database): Router {
   const router = Router();
@@ -44,8 +45,8 @@ export function createDocGenerationRoutes(db: Database.Database): Router {
   });
 
   // GET /api/docs/:swarmId/handoff - implementation handoff document
-  router.get('/:swarmId/handoff', (req, res) => {
-    const swarm = swarmService.findById(req.params.swarmId);
+  router.get('/:swarmId/handoff', requireCapability('docs.handoff'), (req, res) => {
+    const swarm = swarmService.findById(String(req.params.swarmId));
     if (!swarm) return res.status(404).json({ error: 'Swarm not found' });
 
     const markdown = generateHandoffDocument(swarm);

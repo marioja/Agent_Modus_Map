@@ -41,7 +41,7 @@ export class CollaborationServer {
         const decoded = verifyToken(token);
         if (decoded) {
           userId = decoded.userId;
-          userName = decoded.role;
+          userName = decoded.name || decoded.role;
         }
       }
 

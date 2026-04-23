@@ -4,14 +4,16 @@ import { randomUUID } from 'crypto';
 import {
   getDecisionTraces, getDecisionTrace, insertDecisionTrace, detectTracePatterns,
 } from '../db/decision-trace-store.js';
+import { requireCapability } from '../services/license-service.js';
 
 export function createDecisionTraceRoutes(db: Database.Database): Router {
   const router = Router();
 
   // GET /api/traces/:swarmId
-  router.get('/:swarmId', (req, res) => {
+  router.get('/:swarmId', requireCapability('traces.read'), (req, res) => {
+    const swarmId = String(req.params.swarmId);
     const { agentId, tag, limit, offset } = req.query;
-    const traces = getDecisionTraces(db, req.params.swarmId, {
+    const traces = getDecisionTraces(db, swarmId, {
       agentId: agentId as string,
       tag: tag as string,
       limit: limit ? Number(limit) : 50,
@@ -21,20 +23,20 @@ export function createDecisionTraceRoutes(db: Database.Database): Router {
   });
 
   // GET /api/traces/:swarmId/patterns
-  router.get('/:swarmId/patterns', (req, res) => {
-    const patterns = detectTracePatterns(db, req.params.swarmId);
+  router.get('/:swarmId/patterns', requireCapability('traces.read'), (req, res) => {
+    const patterns = detectTracePatterns(db, String(req.params.swarmId));
     res.json({ data: patterns });
   });
 
   // GET /api/traces/:swarmId/:traceId
-  router.get('/:swarmId/:traceId', (req, res) => {
-    const trace = getDecisionTrace(db, req.params.traceId);
+  router.get('/:swarmId/:traceId', requireCapability('traces.read'), (req, res) => {
+    const trace = getDecisionTrace(db, String(req.params.traceId));
     if (!trace) return res.status(404).json({ error: 'Trace not found' });
     res.json({ data: trace });
   });
 
   // POST /api/traces/:swarmId
-  router.post('/:swarmId', (req, res) => {
+  router.post('/:swarmId', requireCapability('traces.write'), (req, res) => {
     const { agentId, agentNickname, title, stages, tags, confidence, durationMs } = req.body;
     if (!agentId || !title || !stages) {
       return res.status(400).json({ error: 'agentId, title, and stages are required' });
@@ -42,7 +44,7 @@ export function createDecisionTraceRoutes(db: Database.Database): Router {
 
     const trace = {
       id: randomUUID(),
-      swarmId: req.params.swarmId,
+      swarmId: String(req.params.swarmId),
       agentId,
       agentNickname: agentNickname || 'unknown',
       title,
