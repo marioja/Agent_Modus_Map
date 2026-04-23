@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { listSwarms, createBlankSwarm, importFromCSV, getCSVTemplateUrl, getTemplates, instantiateTemplate, deleteSwarm, getAllResults, listInterviews } from '../api.js';
 import { SettingsPanel } from './SettingsPanel.js';
 import { ThemeToggle } from './ThemeToggle.js';
 import { LogoWithText } from './Logo.js';
 import { useTheme } from '../hooks/useTheme.js';
 import type { Swarm } from '../../shared/types/index.js';
-import type { TemplateInfo } from '../api.js';
+import type { AuthState, TemplateInfo } from '../api.js';
 
 interface DashboardProps {
   onOpenSwarm: (swarmId: string) => void;
@@ -14,9 +14,77 @@ interface DashboardProps {
   onResumeInterview?: (interviewId: string) => void;
   onShowPricing?: () => void;
   onShowLogin?: () => void;
+  currentUser?: AuthState['user'];
+  onSignOut?: () => void;
 }
 
 type View = 'home' | 'templates' | 'csv';
+
+function getUserInitials(user: NonNullable<AuthState['user']>): string {
+  const source = user.name.trim() || user.email.trim();
+  const parts = source.split(/\s+/).filter(Boolean);
+  if (parts.length === 0) {
+    return '?';
+  }
+  if (parts.length === 1) {
+    return parts[0].slice(0, 2).toUpperCase();
+  }
+  return `${parts[0][0] || ''}${parts[1][0] || ''}`.toUpperCase();
+}
+
+function UserAvatar({ user, size }: { user: NonNullable<AuthState['user']>; size: number }) {
+  const [imageFailed, setImageFailed] = useState(false);
+  const initials = getUserInitials(user);
+
+  useEffect(() => {
+    setImageFailed(false);
+  }, [user.avatarUrl]);
+
+  if (!user.avatarUrl || imageFailed) {
+    return (
+      <span style={{ fontSize: Math.max(13, Math.round(size * 0.34)), fontWeight: 700, letterSpacing: '0.04em' }}>
+        {initials}
+      </span>
+    );
+  }
+
+  return (
+    <span style={{ position: 'relative', display: 'block', width: '100%', height: '100%' }}>
+      <img
+        src={user.avatarUrl}
+        alt={user.name}
+        referrerPolicy="no-referrer"
+        crossOrigin="anonymous"
+        onError={() => setImageFailed(true)}
+        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+      />
+      <span
+        style={{
+          position: 'absolute',
+          right: Math.max(1, Math.round(size * 0.06)),
+          bottom: Math.max(1, Math.round(size * 0.06)),
+          minWidth: Math.max(16, Math.round(size * 0.42)),
+          height: Math.max(16, Math.round(size * 0.42)),
+          padding: '0 4px',
+          borderRadius: 999,
+          background: 'rgba(15, 23, 42, 0.82)',
+          border: '2px solid rgba(255, 255, 255, 0.95)',
+          color: '#fff',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: Math.max(9, Math.round(size * 0.2)),
+          fontWeight: 800,
+          letterSpacing: '0.04em',
+          lineHeight: 1,
+          boxSizing: 'border-box',
+        }}
+      >
+        {initials}
+      </span>
+    </span>
+  );
+}
 
 function InputModal({ title, placeholder, defaultValue, onConfirm, onCancel }: {
   title: string; placeholder?: string; defaultValue?: string;
@@ -99,7 +167,16 @@ function SwarmExplainer() {
   );
 }
 
-export function Dashboard({ onOpenSwarm, onOpenAssistant, onStartInterview, onResumeInterview, onShowPricing, onShowLogin }: DashboardProps) {
+export function Dashboard({
+  onOpenSwarm,
+  onOpenAssistant,
+  onStartInterview,
+  onResumeInterview,
+  onShowPricing,
+  onShowLogin,
+  currentUser,
+  onSignOut,
+}: DashboardProps) {
   const { theme, toggleTheme } = useTheme();
   const [swarms, setSwarms] = useState<Swarm[]>([]);
   const [templates, setTemplates] = useState<TemplateInfo[]>([]);
@@ -112,6 +189,8 @@ export function Dashboard({ onOpenSwarm, onOpenAssistant, onStartInterview, onRe
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [recentResults, setRecentResults] = useState<any[]>([]);
   const [activeInterviews, setActiveInterviews] = useState<Array<{ id: string; phase: number; goal: string; updatedAt: string }>>([]);
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const accountMenuRef = useRef<HTMLDivElement | null>(null);
 
   const [loadError, setLoadError] = useState('');
 
@@ -123,6 +202,31 @@ export function Dashboard({ onOpenSwarm, onOpenAssistant, onStartInterview, onRe
       setActiveInterviews(interviews);
     }).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (!accountMenuOpen) {
+      return;
+    }
+
+    const handlePointerDown = (event: MouseEvent) => {
+      if (accountMenuRef.current && !accountMenuRef.current.contains(event.target as Node)) {
+        setAccountMenuOpen(false);
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setAccountMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handlePointerDown);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [accountMenuOpen]);
 
   const handleCreateBlank = async () => {
     setNameModal({
@@ -188,7 +292,114 @@ export function Dashboard({ onOpenSwarm, onOpenAssistant, onStartInterview, onRe
               background: 'transparent', color: 'var(--text-secondary)', cursor: 'pointer',
               fontSize: 13, fontWeight: 500, fontFamily: 'var(--font-primary)',
             }}>Settings</button>
-            {onShowLogin && (
+            {currentUser ? (
+              <div ref={accountMenuRef} style={{ position: 'relative' }}>
+                <button
+                  onClick={() => setAccountMenuOpen(open => !open)}
+                  style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: '50%',
+                    border: '1px solid var(--border-default)',
+                    background: 'var(--bg-elevated)',
+                    color: 'var(--text-primary)',
+                    cursor: 'pointer',
+                    overflow: 'hidden',
+                    padding: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                  aria-label="Open account menu"
+                  aria-haspopup="menu"
+                  aria-expanded={accountMenuOpen}
+                >
+                  <UserAvatar user={currentUser} size={38} />
+                </button>
+                {accountMenuOpen && (
+                  <div style={{
+                    position: 'absolute',
+                    top: 'calc(100% + 10px)',
+                    right: 0,
+                    width: 280,
+                    borderRadius: 14,
+                    border: '1px solid var(--border-default)',
+                    background: 'var(--bg-surface)',
+                    boxShadow: '0 20px 60px rgba(0, 0, 0, 0.35)',
+                    padding: 'var(--space-4)',
+                    zIndex: 100,
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
+                      <div style={{
+                        width: 44,
+                        height: 44,
+                        borderRadius: '50%',
+                        overflow: 'hidden',
+                        background: 'var(--accent-primary)',
+                        color: '#fff',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: 15,
+                        fontWeight: 700,
+                        flexShrink: 0,
+                      }}>
+                        <UserAvatar user={currentUser} size={44} />
+                      </div>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ color: 'var(--text-primary)', fontSize: 14, fontWeight: 600 }}>
+                          {currentUser.name}
+                        </div>
+                        <div style={{
+                          color: 'var(--text-secondary)',
+                          fontSize: 12,
+                          marginTop: 2,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}>
+                          {currentUser.email}
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{
+                      padding: '10px 12px',
+                      borderRadius: 10,
+                      background: 'var(--bg-elevated)',
+                      border: '1px solid var(--border-subtle, var(--border-default))',
+                      marginBottom: 'var(--space-4)',
+                    }}>
+                      <div style={{ color: 'var(--text-secondary)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>
+                        Signed in
+                      </div>
+                      <div style={{ color: 'var(--text-primary)', fontSize: 13 }}>
+                        {currentUser.authProvider === 'google' ? 'Google account' : 'Local account'} · {currentUser.role}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setAccountMenuOpen(false);
+                        onSignOut?.();
+                      }}
+                      style={{
+                        width: '100%',
+                        padding: '10px 14px',
+                        borderRadius: 10,
+                        border: '1px solid var(--border-default)',
+                        background: 'transparent',
+                        color: 'var(--text-primary)',
+                        cursor: 'pointer',
+                        fontSize: 13,
+                        fontWeight: 600,
+                        fontFamily: 'var(--font-primary)',
+                      }}
+                    >
+                      Sign Out
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : onShowLogin && (
               <button onClick={onShowLogin} style={{
                 padding: '6px 14px', borderRadius: 8, border: 'none',
                 background: 'var(--accent-primary)', color: '#fff', cursor: 'pointer',

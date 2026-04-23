@@ -2,9 +2,22 @@ import type { Swarm, Agent, Relationship, BlastRadiusResult, RelationshipType } 
 
 const BASE = '/api';
 
+function getAuthHeaders(headers: Record<string, string> = {}): Record<string, string> {
+  const token = getAuthToken();
+  if (!token) {
+    return headers;
+  }
+  return { ...headers, Authorization: `Bearer ${token}` };
+}
+
 async function fetchJson<T>(url: string): Promise<T> {
-  const res = await fetch(BASE + url);
-  if (!res.ok) throw new Error(`API error: ${res.status}`);
+  const res = await fetch(BASE + url, {
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ message: `HTTP ${res.status}` }));
+    throw new Error(err.message || err.error || `API error: ${res.status}`);
+  }
   const json = await res.json();
   return json.data ?? json;
 }
@@ -12,12 +25,12 @@ async function fetchJson<T>(url: string): Promise<T> {
 async function postJson<T>(url: string, body: unknown): Promise<T> {
   const res = await fetch(BASE + url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify(body),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ message: `HTTP ${res.status}` }));
-    throw new Error(err.message || `API error: ${res.status}`);
+    throw new Error(err.message || err.error || `API error: ${res.status}`);
   }
   const json = await res.json();
   return json.data ?? json;
@@ -26,17 +39,23 @@ async function postJson<T>(url: string, body: unknown): Promise<T> {
 async function putJson<T>(url: string, body: unknown): Promise<T> {
   const res = await fetch(BASE + url, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify(body),
   });
-  if (!res.ok) throw new Error(`API error: ${res.status}`);
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ message: `HTTP ${res.status}` }));
+    throw new Error(err.message || err.error || `API error: ${res.status}`);
+  }
   const json = await res.json();
   return json.data ?? json;
 }
 
 async function deleteReq(url: string): Promise<void> {
-  const res = await fetch(BASE + url, { method: 'DELETE' });
-  if (!res.ok && res.status !== 204) throw new Error(`API error: ${res.status}`);
+  const res = await fetch(BASE + url, { method: 'DELETE', headers: getAuthHeaders() });
+  if (!res.ok && res.status !== 204) {
+    const err = await res.json().catch(() => ({ message: `HTTP ${res.status}` }));
+    throw new Error(err.message || err.error || `API error: ${res.status}`);
+  }
 }
 
 export async function getSwarms(): Promise<Swarm[]> {
@@ -348,12 +367,93 @@ export interface AuthToken {
   expiresAt: string;
 }
 
-export async function loginApi(email: string, password: string): Promise<AuthToken> {
-  return postJson('/auth/login', { email, password });
+export type LicensePlan = 'free' | 'starter' | 'pro' | 'enterprise';
+
+export interface AuthState {
+  authenticated: boolean;
+  user: {
+    id: string;
+    email: string;
+    name: string;
+    role: string;
+    authProvider: 'password' | 'google';
+    avatarUrl?: string | null;
+  } | null;
+  permissions: string[];
+  capabilities: string[];
+  featureFlags: Record<string, boolean>;
+  license: {
+    plan: LicensePlan;
+    status: string;
+    source: string;
+    issuedAt: string;
+    expiresAt: string;
+    refreshAfter: string;
+    needsRefresh: boolean;
+    deviceFingerprint: string;
+  } | null;
+  warnings: string[];
+  sessionToken: string | null;
 }
 
-export async function getMe(): Promise<{ user: AuthToken['user']; permissions: string[] }> {
+export interface AuthConfig {
+  googleEnabled: boolean;
+  googleClientId: string | null;
+  passwordEnabled: boolean;
+}
+
+export async function getMe(): Promise<AuthState> {
   return fetchJson('/auth/me');
+}
+
+export async function getAuthState(): Promise<AuthState> {
+  const state = applyCachedGoogleAvatar(await fetchJson<AuthState>('/auth/state'));
+  if (state.sessionToken) {
+    setAuthToken(state.sessionToken);
+  }
+  return state;
+}
+
+export async function refreshLicenseApi(): Promise<AuthState> {
+  const state = applyCachedGoogleAvatar(await postJson<AuthState>('/auth/license/refresh', {}));
+  if (state.sessionToken) {
+    setAuthToken(state.sessionToken);
+  }
+  return state;
+}
+
+export async function getAuthConfig(): Promise<AuthConfig> {
+  return fetchJson('/auth/config');
+}
+
+export async function activateGoogleApi(idToken: string): Promise<AuthState> {
+  const googleProfile = extractGoogleProfileFromIdToken(idToken);
+  let state = applyCachedGoogleAvatar(await postJson<AuthState>('/auth/google/activate', {
+    idToken,
+    picture: googleProfile?.picture ?? undefined,
+  }), googleProfile?.picture);
+  if (googleProfile?.picture && state.user && !state.user.avatarUrl) {
+    state = {
+      ...state,
+      user: {
+        ...state.user,
+        avatarUrl: googleProfile.picture,
+      },
+    };
+  }
+  cacheGoogleAvatar(state, googleProfile?.picture);
+  if (state.sessionToken) {
+    setAuthToken(state.sessionToken);
+  }
+  return state;
+}
+
+export async function loginApi(email: string, password: string): Promise<AuthState> {
+  const state = await postJson<AuthState>('/auth/login', { email, password });
+  if (state.sessionToken) {
+    setAuthToken(state.sessionToken);
+  }
+  return state;
 }
 
 // Auth token management
@@ -373,6 +473,64 @@ export function getAuthToken(): string | null {
     authToken = localStorage.getItem('agentModusMap_token');
   }
   return authToken;
+}
+
+function extractGoogleProfileFromIdToken(idToken: string): { picture?: string } | null {
+  const parts = idToken.split('.');
+  if (parts.length < 2) {
+    return null;
+  }
+
+  try {
+    const payload = JSON.parse(decodeBase64Url(parts[1])) as { picture?: unknown };
+    return typeof payload.picture === 'string' ? { picture: payload.picture } : null;
+  } catch {
+    return null;
+  }
+}
+
+function decodeBase64Url(value: string): string {
+  const normalized = value.replace(/-/g, '+').replace(/_/g, '/');
+  const padding = normalized.length % 4 === 0 ? '' : '='.repeat(4 - (normalized.length % 4));
+  return atob(normalized + padding);
+}
+
+function applyCachedGoogleAvatar(state: AuthState, fallbackPicture?: string): AuthState {
+  if (!state.user || state.user.authProvider !== 'google') {
+    return state;
+  }
+
+  const avatarUrl = state.user.avatarUrl || fallbackPicture || getCachedGoogleAvatar(state.user.email);
+  if (!avatarUrl || avatarUrl === state.user.avatarUrl) {
+    return state;
+  }
+
+  return {
+    ...state,
+    user: {
+      ...state.user,
+      avatarUrl,
+    },
+  };
+}
+
+function cacheGoogleAvatar(state: AuthState, fallbackPicture?: string): void {
+  if (!state.user || state.user.authProvider !== 'google') {
+    return;
+  }
+  const avatarUrl = state.user.avatarUrl || fallbackPicture;
+  if (!avatarUrl) {
+    return;
+  }
+  localStorage.setItem(getGoogleAvatarCacheKey(state.user.email), avatarUrl);
+}
+
+function getCachedGoogleAvatar(email: string): string | null {
+  return localStorage.getItem(getGoogleAvatarCacheKey(email));
+}
+
+function getGoogleAvatarCacheKey(email: string): string {
+  return `agentModusMap_googleAvatar:${email.toLowerCase()}`;
 }
 
 // MCP Runtime

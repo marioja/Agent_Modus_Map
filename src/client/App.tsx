@@ -27,27 +27,20 @@ import { useCollaboration } from './hooks/useCollaboration.js';
 import {
   getSwarm, getBlastRadius, exportSwarm, importSwarm,
   getSwarmHealthSummary, getSwarmHealth, getHTMLExportUrl, getHandoffDocUrl,
-  type AgentHealthSummary,
+  getAuthState, refreshLicenseApi, setAuthToken, type AgentHealthSummary, type AuthState,
   createAgent, updateAgent, deleteAgent,
   createRelationship, deleteRelationship,
 } from './api.js';
 import type { SwarmHealthSummary } from './api.js';
-import type { Swarm, Agent, BlastRadiusResult, RelationshipType, Badge } from '../shared/types/index.js';
+import type { Swarm, Agent, BlastRadiusResult, RelationshipType } from '../shared/types/index.js';
 
 const ONBOARDING_KEY = 'agent-modus-onboarding-v2';
 
 type AppView = 'dashboard' | 'editor';
 
-interface AppUser {
-  name: string;
-  email: string;
-}
-
 export function App() {
-  const [user, setUser] = useState<AppUser | null>(() => {
-    const saved = localStorage.getItem('agent-modus-user');
-    return saved ? JSON.parse(saved) : null;
-  });
+  const [auth, setAuth] = useState<AuthState | null>(null);
+  const [authLoaded, setAuthLoaded] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
   const [showPricing, setShowPricing] = useState(false);
   const [view, setView] = useState<AppView>('dashboard');
@@ -90,6 +83,38 @@ export function App() {
   const [showOnboarding, setShowOnboarding] = useState(() => !localStorage.getItem(ONBOARDING_KEY));
 
   const collab = useCollaboration(swarmId);
+  const user = auth?.user ?? null;
+
+  useEffect(() => {
+    let cancelled = false;
+    getAuthState()
+      .then((state) => {
+        if (!cancelled) {
+          setAuth(state);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setAuth(null);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setAuthLoaded(true);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!auth?.authenticated || !auth.license?.needsRefresh) {
+      return;
+    }
+    refreshLicenseApi().then(setAuth).catch(() => {});
+  }, [auth]);
 
   const reloadSwarm = useCallback(async (id?: string) => {
     const targetId = id || swarmId;
@@ -287,13 +312,31 @@ export function App() {
     setShowOnboarding(false);
   }, []);
 
+  const handleSignOut = useCallback(() => {
+    setAuthToken(null);
+    setAuth(null);
+    setShowLogin(false);
+    setShowPricing(false);
+  }, []);
+
+  const requireFeature = useCallback((capability: string, onAllowed: () => void) => {
+    if (!authLoaded || !auth?.authenticated) {
+      setShowLogin(true);
+      return;
+    }
+    if (!auth.featureFlags[capability]) {
+      setShowPricing(true);
+      return;
+    }
+    onAllowed();
+  }, [auth, authLoaded]);
+
   // Login page (shown when user clicks Sign In, not forced)
   if (showLogin) {
     return (
       <LoginPage
-        onLogin={(u) => {
-          setUser(u);
-          localStorage.setItem('agent-modus-user', JSON.stringify(u));
+        onLogin={(nextAuth) => {
+          setAuth(nextAuth);
           setShowLogin(false);
         }}
         onSkip={() => setShowLogin(false)}
@@ -304,14 +347,14 @@ export function App() {
   // Pricing page
   if (showPricing) {
     return (
-      <PricingPage
-        onSelectPlan={(plan) => {
-          console.log('Selected plan:', plan);
-          setShowPricing(false);
-          if (!user) setShowLogin(true);
-        }}
-        onClose={() => setShowPricing(false)}
-      />
+        <PricingPage
+          onSelectPlan={(plan) => {
+            console.log('Selected plan:', plan);
+            setShowPricing(false);
+            if (!user) setShowLogin(true);
+          }}
+          onClose={() => setShowPricing(false)}
+        />
     );
   }
 
@@ -322,10 +365,15 @@ export function App() {
         <Dashboard
           onOpenSwarm={handleOpenSwarm}
           onOpenAssistant={(id) => setAssistantSwarmId(id)}
-          onStartInterview={() => { setResumeInterviewId(undefined); setShowInterview(true); }}
+          onStartInterview={() => requireFeature('interview.access', () => {
+            setResumeInterviewId(undefined);
+            setShowInterview(true);
+          })}
           onResumeInterview={(id) => { setResumeInterviewId(id); setShowInterview(true); }}
           onShowPricing={() => setShowPricing(true)}
           onShowLogin={() => setShowLogin(true)}
+          currentUser={user}
+          onSignOut={handleSignOut}
         />
         {showInterview && (
           <InterviewPanel
@@ -376,15 +424,21 @@ export function App() {
           onToggleValidation={() => togglePanel('validation')}
           onToggleOrchestrator={() => togglePanel('orchestrator')}
           onOpenHealth={() => setOpenPanel('health')}
-          onOpenTraces={() => setOpenPanel('traces')}
+          onOpenTraces={() => requireFeature('traces.read', () => setOpenPanel('traces'))}
           onOpenGovernance={() => setOpenPanel('governance')}
           onOpenCollaboration={() => setOpenPanel('collaboration')}
           onOpenOptimization={() => setOpenPanel('optimization')}
           onOpenDocs={() => setOpenPanel('docs')}
           onExportJSON={handleExportJSON}
           onExportHTML={handleExportHTML}
-          onExportHandoff={handleExportHandoff}
-          onToggleSimulation={() => editorMode === 'ship' ? setDeployOpen(!deployOpen) : togglePanel('simulation')}
+          onExportHandoff={() => requireFeature('docs.handoff', handleExportHandoff)}
+          onToggleSimulation={() => {
+            if (editorMode === 'ship') {
+              requireFeature('deploy.once', () => setDeployOpen(!deployOpen));
+              return;
+            }
+            togglePanel('simulation');
+          }}
           onImport={handleImport}
           showBlastRadius={showBlastRadius}
           onToggleBlastRadius={handleToggleBlastRadius}

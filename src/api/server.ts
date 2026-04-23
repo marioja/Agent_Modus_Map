@@ -25,6 +25,7 @@ import { initDecisionTraceStore } from './db/decision-trace-store.js';
 import { initAuditStore } from './db/audit-store.js';
 import { initVersionStore } from './db/version-store.js';
 import { initAuthStore } from './services/auth-service.js';
+import { createAuthorizationMiddleware, initLicenseStore, requireCapability } from './services/license-service.js';
 import { CollaborationServer } from './services/websocket-service.js';
 import { isLLMAvailable } from './services/llm-service.js';
 
@@ -38,9 +39,11 @@ export function createApp(db?: ReturnType<typeof getDb>) {
   initAuditStore(database);
   initVersionStore(database);
   initAuthStore(database);
+  initLicenseStore(database);
 
   app.use(cors());
   app.use(express.json({ limit: '10mb' }));
+  app.use(createAuthorizationMiddleware(database));
 
   app.use('/api/swarms', createSwarmRoutes(database));
   app.use('/api/intelligence', createIntelligenceRoutes(database));
@@ -56,8 +59,8 @@ export function createApp(db?: ReturnType<typeof getDb>) {
   app.use('/api/auth', createAuthRoutes(database));
   app.use('/api/mcp', createMcpRoutes());
   app.use('/api/import', createImportRoutes(database));
-  app.use('/api/prospects', createProspectRoutes());
-  app.use('/api/interview', createInterviewRoutes(database));
+  app.use('/api/prospects', requireCapability('prospects.access'), createProspectRoutes());
+  app.use('/api/interview', requireCapability('interview.access'), createInterviewRoutes(database));
 
   // Health check
   app.get('/api/health', (_req, res) => {
@@ -93,6 +96,7 @@ if (isMain) {
   initDecisionTraceStore(database);
   initAuditStore(database);
   initVersionStore(database);
+  initLicenseStore(database);
 
   // Seed health history if empty
   const count = (database.prepare('SELECT COUNT(*) as c FROM health_reports').get() as any)?.c || 0;

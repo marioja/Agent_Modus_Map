@@ -2,6 +2,7 @@ import { Router } from 'express';
 import type { Request, Response } from 'express';
 import type Database from 'better-sqlite3';
 import { TemplateService } from '../services/template-service.js';
+import { filterTemplatesForAuthorization, getRequestAuth } from '../services/license-service.js';
 
 type Req = Request<Record<string, string>>;
 
@@ -10,15 +11,17 @@ export function createTemplateRoutes(db: Database.Database): Router {
   const templateService = new TemplateService(db);
 
   // GET /api/templates
-  router.get('/', (_req: Req, res: Response) => {
-    const templates = templateService.listTemplates();
+  router.get('/', (req: Req, res: Response) => {
+    const templates = filterTemplatesForAuthorization(templateService.listTemplates(), getRequestAuth(req));
     res.json({ data: templates });
   });
 
   // GET /api/templates/:id
   router.get('/:id', (req: Req, res: Response) => {
     const template = templateService.getTemplate(req.params.id);
-    if (!template) {
+    const visibleTemplates = filterTemplatesForAuthorization(templateService.listTemplates(), getRequestAuth(req));
+    const visible = visibleTemplates.some(item => item.id === req.params.id);
+    if (!template || !visible) {
       res.status(404).json({ error: 'not_found', message: 'Template not found.' });
       return;
     }
@@ -33,7 +36,9 @@ export function createTemplateRoutes(db: Database.Database): Router {
       return;
     }
 
-    const swarm = templateService.instantiate(req.params.id, name);
+    const visibleTemplates = filterTemplatesForAuthorization(templateService.listTemplates(), getRequestAuth(req));
+    const visible = visibleTemplates.some(item => item.id === req.params.id);
+    const swarm = visible ? templateService.instantiate(req.params.id, name) : null;
     if (!swarm) {
       res.status(404).json({ error: 'not_found', message: 'Template not found.' });
       return;

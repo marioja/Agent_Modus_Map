@@ -8,13 +8,23 @@ const JWT_SECRET = process.env.JWT_SECRET || 'agent-modus-map-dev-secret-change-
 const TOKEN_EXPIRY = '24h';
 
 export type Role = 'admin' | 'designer' | 'viewer';
+export type AuthProvider = 'password' | 'google';
 
 export interface User {
   id: string;
   email: string;
   name: string;
   role: Role;
+  authProvider: AuthProvider;
+  avatarUrl?: string | null;
   createdAt: string;
+}
+
+export interface SessionClaims {
+  userId: string;
+  role: Role;
+  name: string;
+  plan?: string;
 }
 
 export interface AuthToken {
@@ -70,9 +80,16 @@ export function initAuthStore(db: Database.Database): void {
       name TEXT NOT NULL,
       password_hash TEXT NOT NULL,
       role TEXT NOT NULL DEFAULT 'viewer',
+      auth_provider TEXT NOT NULL DEFAULT 'password',
+      provider_user_id TEXT,
+      avatar_url TEXT,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
   `);
+
+  ensureUserColumn(db, 'auth_provider', "ALTER TABLE users ADD COLUMN auth_provider TEXT NOT NULL DEFAULT 'password'");
+  ensureUserColumn(db, 'provider_user_id', 'ALTER TABLE users ADD COLUMN provider_user_id TEXT');
+  ensureUserColumn(db, 'avatar_url', 'ALTER TABLE users ADD COLUMN avatar_url TEXT');
 
   // Seed default admin if no users exist (use low rounds for fast init)
   const count = (db.prepare('SELECT COUNT(*) as c FROM users').get() as any)?.c || 0;
@@ -101,18 +118,24 @@ export function login(db: Database.Database, email: string, password: string): A
     email: row.email,
     name: row.name,
     role: row.role,
+    authProvider: row.auth_provider,
+    avatarUrl: row.avatar_url,
     createdAt: row.created_at,
   };
 
-  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-  const token = jwt.sign({ userId: user.id, role: user.role }, JWT_SECRET, { expiresIn: TOKEN_EXPIRY });
-
+  const { token, expiresAt } = issueSessionToken(user);
   return { token, user, expiresAt };
 }
 
-export function verifyToken(token: string): { userId: string; role: Role } | null {
+export function issueSessionToken(user: Pick<User, 'id' | 'role' | 'name'>, plan?: string): { token: string; expiresAt: string } {
+  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+  const token = jwt.sign({ userId: user.id, role: user.role, name: user.name, plan }, JWT_SECRET, { expiresIn: TOKEN_EXPIRY });
+  return { token, expiresAt };
+}
+
+export function verifyToken(token: string): SessionClaims | null {
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string; role: Role };
+    const decoded = jwt.verify(token, JWT_SECRET) as SessionClaims;
     return decoded;
   } catch {
     return null;
@@ -122,18 +145,60 @@ export function verifyToken(token: string): { userId: string; role: Role } | nul
 export function getUserById(db: Database.Database, userId: string): User | null {
   const row = db.prepare('SELECT * FROM users WHERE id = ?').get(userId) as any;
   if (!row) return null;
-  return { id: row.id, email: row.email, name: row.name, role: row.role, createdAt: row.created_at };
+  return {
+    id: row.id,
+    email: row.email,
+    name: row.name,
+    role: row.role,
+    authProvider: row.auth_provider,
+    avatarUrl: row.avatar_url,
+    createdAt: row.created_at,
+  };
 }
 
 export function listUsers(db: Database.Database): User[] {
   const rows = db.prepare('SELECT * FROM users ORDER BY created_at').all() as any[];
-  return rows.map(row => ({ id: row.id, email: row.email, name: row.name, role: row.role, createdAt: row.created_at }));
+  return rows.map(row => ({
+    id: row.id,
+    email: row.email,
+    name: row.name,
+    role: row.role,
+    authProvider: row.auth_provider,
+    avatarUrl: row.avatar_url,
+    createdAt: row.created_at,
+  }));
 }
 
 export function createUser(db: Database.Database, email: string, name: string, password: string, role: Role): User {
   const id = randomUUID();
   const hash = bcrypt.hashSync(password, 10);
-  db.prepare('INSERT INTO users (id, email, name, password_hash, role) VALUES (?, ?, ?, ?, ?)').run(id, email, name, hash, role);
+  db.prepare('INSERT INTO users (id, email, name, password_hash, role, auth_provider) VALUES (?, ?, ?, ?, ?, ?)')
+    .run(id, email, name, hash, role, 'password');
+  return getUserById(db, id)!;
+}
+
+export function upsertGoogleUser(
+  db: Database.Database,
+  identity: { email: string; name: string; googleUserId: string; picture?: string | null }
+): User {
+  const existing = db.prepare('SELECT * FROM users WHERE email = ?').get(identity.email) as any;
+  if (existing) {
+    const avatarUrl = identity.picture ?? existing.avatar_url ?? null;
+    db.prepare(`
+      UPDATE users
+      SET name = ?, auth_provider = 'google', provider_user_id = ?, avatar_url = ?
+      WHERE id = ?
+    `).run(identity.name, identity.googleUserId, avatarUrl, existing.id);
+    return getUserById(db, existing.id)!;
+  }
+
+  const id = randomUUID();
+  const rounds = process.env.NODE_ENV === 'test' ? 1 : 10;
+  const hash = bcrypt.hashSync(randomUUID(), rounds);
+  db.prepare(`
+    INSERT INTO users (id, email, name, password_hash, role, auth_provider, provider_user_id, avatar_url)
+    VALUES (?, ?, ?, ?, 'viewer', 'google', ?, ?)
+  `).run(id, identity.email, identity.name, hash, identity.googleUserId, identity.picture || null);
   return getUserById(db, id)!;
 }
 
@@ -151,4 +216,12 @@ export function hasPermission(role: Role, permission: string): boolean {
 
 export function getPermissions(role: Role): string[] {
   return ROLE_PERMISSIONS[role] || [];
+}
+
+function ensureUserColumn(db: Database.Database, columnName: string, ddl: string): void {
+  const columns = db.prepare("PRAGMA table_info(users)").all() as Array<{ name: string }>;
+  const exists = columns.some(column => column.name === columnName);
+  if (!exists) {
+    db.exec(ddl);
+  }
 }
